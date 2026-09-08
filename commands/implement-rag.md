@@ -44,8 +44,11 @@ The CLI needs `JIRA_EMAIL` and `JIRA_API_TOKEN` in `.env.local` (see `.env.examp
 
 1. `Read` `.env.local` at the project root (if it doesn't exist yet, treat both vars as missing).
 2. Check both `JIRA_EMAIL=` and `JIRA_API_TOKEN=` are present with a non-empty value.
-3. If either is missing — ask the human directly in chat (plain question, not `AskUserQuestion` — secrets are free text): their Atlassian account email, and an API token from `https://id.atlassian.com/manage-profile/security/api-tokens`.
-4. Write them to `.env.local`:
+3. If either is missing, ask **one at a time, in chat, not `AskUserQuestion`** (secrets are free text) — never combine both into one message:
+   - First ask only for the Atlassian account email. Wait for the reply.
+   - Then, in a separate follow-up message, ask only for the API token (mention `https://id.atlassian.com/manage-profile/security/api-tokens` if they need to generate one). Wait for the reply.
+   - Skip whichever of the two `.env.local` already has — only ask for the one(s) actually missing.
+4. Only once **all** missing value(s) from step 3 have been collected, write them to `.env.local` in a single pass — don't write the email right after it's given and then write the token separately once it arrives:
    - If `.env.local` doesn't exist yet, create it from `.env.example` first (`cp`), then fill in the two values.
    - If it exists, `Edit` only the exact `JIRA_EMAIL=`/`JIRA_API_TOKEN=` lines — never touch any other line, and never rewrite the whole file.
 5. Never echo the token value back in your response — after writing, confirm only that it was saved to `.env.local`, not what it is.
