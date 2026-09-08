@@ -46,10 +46,10 @@ Playwright/POM/TS project, generalized) under this plugin's own
 
 | Layer | Adds |
 |---|---|
-| `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs), `.gitignore`, `.env.example` (secrets template — copy to `.env.local`), `.env.uat` (a real, committed placeholder — only `BASE_URL` needs a working value to run anything), `CLAUDE.md` (generic project-instructions starter), `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
+| `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs) + `.claude/settings.local.json` (pre-enables it, see Step 0b), `.gitignore`, `.env.example` (secrets template — copy to `.env.local`), `.env.uat` (a real, committed placeholder — only `BASE_URL` needs a working value to run anything), `README.md` (generic human-facing setup/run doc, TODO-marked) + `CLAUDE.md` (generic project-instructions starter), `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
 | `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
 | `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
-| `rag` | `src/rag/` (embedder, cross-encoder reranker, SQLite/in-memory/Qdrant vector stores, pipeline, evaluator), `scripts/rag-cli.ts` (index/query CLI, incl. Jira ingestion), `guide/rag-guide.md`, `plan/` docs-drop folder + `.gitignore` entries, `package.json` `rag:build`/`rag:index`/`rag:query` scripts — a real vendored implementation, no external tool install required (see Step 1.6 below and each layer's own `ADDITIONS.md`) |
+| `rag` | `src/rag/` (embedder, cross-encoder reranker, SQLite/in-memory/Qdrant vector stores, pipeline, evaluator), `scripts/rag-cli.ts` (index/query CLI, incl. Jira ingestion), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:build`/`rag:index`/`rag:query` scripts — a real vendored implementation, no external tool install required (see Step 1.6 below and each layer's own `ADDITIONS.md`) |
 
 1. **Detect what's already there** before asking anything: check for
    `playwright.config.ts`, `tsconfig.json`, `.mcp.json`, a POM directory (per
@@ -84,7 +84,7 @@ Playwright/POM/TS project, generalized) under this plugin's own
    instructions for you to apply with `Edit`, not files to copy verbatim).
    - Replace `{{APP_SLUG}}` with a short kebab-case slug derived from the
      target project's name (package.json `name`, or the directory name) —
-     used for the storageState auth filename.
+     used for the storageState auth filename and as `README.md`'s title.
    - **Never overwrite a file that already exists at the target path.** If a
      template file would collide with something already there, skip writing
      it and note the skip in the Step 5 report instead — this is existing
@@ -104,6 +104,31 @@ Playwright/POM/TS project, generalized) under this plugin's own
 6. Whatever layers were scaffolded (or none, if skipped), continue into
    Step 1 below — the scan there will now pick up whatever structure just got
    written (or the project's pre-existing one) as "existing conventions."
+
+## Step 0b — Default every `.mcp.json` server to enabled
+
+Run this unconditionally on every `/qa-agents:init` run (not just when the
+`core` layer was just scaffolded) — it also has to fix pre-existing projects
+where this drifted before init ever ran. No conditional branching, no
+conflict analysis — the rule is simply "every server this project's
+`.mcp.json` defines is enabled by default," full stop:
+
+1. If the target project has an `.mcp.json` (freshly scaffolded — the `core`
+   layer's template now includes a matching `.claude/settings.local.json`
+   pre-set this way, so this step is a no-op there — or pre-existing), read
+   its `mcpServers` keys.
+2. Read `.claude/settings.local.json` in the target project (create it with
+   `{}` first if it doesn't exist yet).
+3. For every one of those server names: make sure it's listed in
+   `enabledMcpjsonServers` and make sure it's absent from
+   `disabledMcpjsonServers`. Apply this unconditionally, regardless of
+   whatever state the two lists were already in — don't special-case "both
+   lists" vs. "disabled only" vs. "missing"; just enforce the end state.
+4. Write the file back with only the minimal change (don't reformat or touch
+   unrelated keys like `permissions`).
+5. Note in the Step 5 report whether this changed anything (and what), or
+   state that everything was already enabled by default — must be visible to
+   the human, not a silent edit.
 
 ## Step 1 — Scan for existing conventions
 
@@ -184,9 +209,10 @@ Copy `docs/healing-rules.md` as-is (it's app-agnostic P1/P2 troubleshooting) unl
 Tell the human:
 - Which scaffold layers (if any) were applied in Step 0, which files were written, and which were skipped because something already existed at that path (list them — don't silently drop this).
 - Any merge conflicts flagged in Step 0 (existing script/dep/config value that differed from the template's).
+- Whether Step 0b found and fixed an MCP enable/disable conflict in `.claude/settings.local.json` (and which server), or found none.
 - That `src/pages/example/login.page.ts` / `src/global.setup.ts` (if scaffolded) are TODO-marked starters needing a real `dom-inspector` + `pom-author` pass, or deletion if the app needs no auth.
 - That `.env.uat` (if scaffolded) has a placeholder `BASE_URL=https://example.com` — replace it with the app's real UAT URL before running any spec.
-- That `CLAUDE.md` (if scaffolded) is a generic starter with `TODO(init)` markers — point out it should be revisited once conventions are confirmed, and note it was skipped if the project already had one.
+- That `CLAUDE.md` and `README.md` (if scaffolded) are generic starters with `TODO(init)` markers — point out they should be revisited once conventions are confirmed, and note either was skipped if the project already had one.
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
 - Whether framework-rules.md / intent-mapping.md were written or skipped, and why.

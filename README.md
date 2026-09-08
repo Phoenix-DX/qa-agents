@@ -69,7 +69,7 @@ auth starter), `allure`
 (reporting), `api-k6` (a generic REST API layer + k6 perf tests against the
 public Petstore demo), and `rag` (a real vendored two-stage RAG
 implementation — `src/rag/` embedder/reranker/vector-stores, a
-`scripts/rag-cli.ts` index/query CLI incl. Jira ingestion, and a `plan/`
+`scripts/rag-cli.ts` index/query CLI incl. Jira ingestion, and a `docs/`
 docs-drop folder — no external tool install required, see below). It always
 asks first — **Default** (scaffold every layer with anything missing) or
 **Custom** (pick specific layers) — shows what's already present vs.

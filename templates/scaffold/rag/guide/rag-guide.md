@@ -16,7 +16,7 @@ rerank, local SQLite by default, no external service required). See
 These 3 extensions are read natively by `rag-cli` (`scripts/rag-cli.ts`,
 `INDEXABLE_EXTENSIONS`). No conversion needed:
 
-1. Drop the file into `plan/` (any subfolder works — it's walked
+1. Drop the file into `docs/` (any subfolder works — it's walked
    recursively).
 2. Run:
    ```bash
@@ -60,7 +60,7 @@ index one, convert it to Markdown first:
 
 1. Ask Claude to read the PDF (the `Read` tool supports PDF; for docs over
    10 pages, read it in page ranges — max 20 pages per call).
-2. Have Claude write the extracted content as `plan/<name>.md` — plain
+2. Have Claude write the extracted content as `docs/<name>.md` — plain
    Markdown, tables kept as tables, no need to preserve exact PDF layout.
 3. Run `npm run rag:index` as usual.
 
@@ -72,7 +72,7 @@ Also not auto-fetched. Convert manually:
 
 1. Ask Claude to fetch the page (`WebFetch`).
 2. Have Claude strip navigation/ads/boilerplate and keep just the
-   substantive content, saved as `plan/<name>.md` (add a `Source: <url>`
+   substantive content, saved as `docs/<name>.md` (add a `Source: <url>`
    line at the top for traceability).
 3. Run `npm run rag:index`.
 
@@ -94,7 +94,7 @@ readable HTML text. Stripping tags alone loses the data:
    `<b>`, `<code>`, etc.) into plain Markdown, keep any Mermaid diagram
    strings as fenced ` ```mermaid ` code blocks, render tables for
    structured fields.
-4. Write the result to `plan/<name>.md`, then `npm run rag:index`.
+4. Write the result to `docs/<name>.md`, then `npm run rag:index`.
 
 This is a one-off manual conversion (ask Claude to do it given the specific
 file) — there's no generic tool for it since every such export has a
@@ -110,8 +110,8 @@ npm run rag:query -- "<a question only the new doc could answer>"
 
 Confirm the top result's `source` is the new file and the content actually
 answers the question. An empty array or all-negative `rerankScore` means
-nothing relevant got indexed — check the file actually landed in `plan/`
-and the index step reported `Indexed N chunks from plan/<file>`.
+nothing relevant got indexed — check the file actually landed in `docs/`
+and the index step reported `Indexed N chunks from docs/<file>`.
 
 ---
 
@@ -121,10 +121,10 @@ Two options — pick based on what you need:
 
 | Option | How | Tradeoff |
 |---|---|---|
-| Share the source doc | Send the `plan/*.md` file (chat/drive), teammate drops it into their own `plan/` and runs `npm run rag:index` | Reproducible, source of truth stays as docs, but each person rebuilds their own store |
+| Share the source doc | Send the `docs/*.md` file (chat/drive), teammate drops it into their own `docs/` and runs `npm run rag:index` | Reproducible, source of truth stays as docs, but each person rebuilds their own store |
 | Share the built index | Copy `.rag/store.sqlite` directly into the same relative path in their repo | Instant, no rebuild — but it's a binary blob, must be sent outside git (`.rag/` is gitignored), and both sides need `@huggingface/transformers` installed for the embedder/reranker models |
 
-Either way, `.rag/` and `plan/` (except `plan/README.md`) are gitignored —
+Either way, `.rag/` and `docs/` (except `docs/README.md`) are gitignored —
 nothing here is meant to go through a normal `git push`/`git pull`.
 
 ---
@@ -144,7 +144,7 @@ nothing here is meant to go through a normal `git push`/`git pull`.
 ## Troubleshooting
 
 - `knowledge-retriever` returns `RAG_UNAVAILABLE` → nothing indexed yet, or
-  `.rag/store.sqlite` doesn't exist. Fix: drop a doc in `plan/` and run
+  `.rag/store.sqlite` doesn't exist. Fix: drop a doc in `docs/` and run
   `npm run rag:index` (it auto-creates the SQLite file).
 - Query returns nothing relevant / low `rerankScore` → either nothing
   indexed covers that topic, or the question is too vague — try a narrower

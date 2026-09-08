@@ -58,7 +58,7 @@ src/
 
 k6/                          perf tests (smoke/load/stress) — only if the
                               api-k6 layer was scaffolded
-plan/, scripts/rag-cli.ts,
+docs/, scripts/rag-cli.ts,
 src/rag/, guide/rag-guide.md — RAG ingestion — only if the rag layer was
                               scaffolded
 <casesDir from the config>   TC source markdown
@@ -104,7 +104,7 @@ npm run allure
 npm run test:perf
 
 # rag layer
-npm run rag:index                   # index plan/ (default) into the RAG store
+npm run rag:index                   # index docs/ (default) into the RAG store
 npm run rag:query -- "<question>"   # ad-hoc lookup — same query knowledge-retriever runs
 ```
 

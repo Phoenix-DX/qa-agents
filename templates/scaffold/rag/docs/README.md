@@ -1,4 +1,4 @@
-# plan/
+# docs/
 
 Drop requirement docs here (`.md`, `.txt`, `.docx` — any subfolder, walked
 recursively), then index them:

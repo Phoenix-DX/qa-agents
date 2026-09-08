@@ -14,7 +14,7 @@ src/rag/                — embedder, reranker, vector stores (sqlite/in-memory/
 src/utils/env.ts        — requireEnv() helper (skip if core layer already added this — same file, no conflict)
 scripts/rag-cli.ts      — the index/query CLI, bundled by esbuild into dist/rag-cli.mjs
 guide/rag-guide.md      — full ingestion guide (PDF, web page, Jira, etc.)
-plan/README.md          — the docs-drop folder's own instructions
+docs/README.md          — the docs-drop folder's own instructions
 ```
 
 ## 2. package.json — scripts to add
@@ -58,11 +58,11 @@ satisfiable) version — don't add a duplicate/conflicting entry.
 ## 5. .gitignore — lines to add
 
 ```
-# plan/ — local requirement docs dropped in for RAG indexing, not framework code
-/plan/*.md
-/plan/*.txt
-/plan/*.docx
-!/plan/README.md
+# docs/ — local requirement docs dropped in for RAG indexing, not framework code
+/docs/*.md
+/docs/*.txt
+/docs/*.docx
+!/docs/README.md
 
 # RAG local vector store (SQLite) — local index, not shared via git
 /.rag/

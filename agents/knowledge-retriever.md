@@ -26,7 +26,7 @@ You answer ONE specific requirement gap by querying the indexed RAG store. You n
 
 4. Classify the outcome:
    - **Command fails because the script doesn't exist** (`npm error Missing script: "rag:query"` or similar) → verdict `RAG_UNAVAILABLE`, and say explicitly that this project hasn't scaffolded the RAG layer — point to re-running `/qa-agents:init` and opting into the `rag` layer, rather than treating this as "the answer doesn't exist."
-   - **Command fails for another reason** (e.g. no store/collection indexed yet at this path) → verdict `RAG_UNAVAILABLE`, note that `npm run rag:index` hasn't been run for this project/collection yet.
+   - **Command fails for another reason** (e.g. no store/collection indexed yet at this path) → verdict `RAG_UNAVAILABLE`, note that indexing hasn't been run for this project/collection yet — point to `/qa-agents:implement-rag` (or `npm run rag:index` directly) rather than running it yourself.
    - **Empty array** or all results have `rerankScore` below ~0.3 → verdict `INSUFFICIENT`. Nothing relevant is indexed for this question.
    - **Results found** but only partially answer the gap → verdict `PARTIAL`. Return what was found plus what's still missing.
    - **Results found** and directly answer the gap → verdict `SUFFICIENT`.

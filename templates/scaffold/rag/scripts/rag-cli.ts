@@ -10,7 +10,7 @@ const localEnvPath = resolve(scriptDir, '..', '.env.local');
 if (existsSync(localEnvPath)) dotenv.config({ path: localEnvPath, quiet: true });
 
 const DEFAULT_COLLECTION = 'requirements';
-const DEFAULT_INDEX_FOLDER = 'plan';
+const DEFAULT_INDEX_FOLDER = 'docs';
 const INDEXABLE_EXTENSIONS = ['.md', '.txt', '.docx'];
 
 function walk(dir: string): string[] {
