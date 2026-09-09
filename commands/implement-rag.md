@@ -1,10 +1,10 @@
 ---
-description: Index the project's docs-drop folder (or a Jira issue/search URL) into the vendored RAG store via its own `npm run rag:index` script — wraps the manual terminal step so it runs directly from Claude Code (requires /qa-agents:init to have scaffolded the `rag` layer).
+description: Index the project's docs-drop folder (or a Jira issue/search URL, or a Confluence page/space URL) into the vendored RAG store via its own `npm run rag:index` script — wraps the manual terminal step so it runs directly from Claude Code (requires /qa-agents:init to have scaffolded the `rag` layer).
 ---
 
 # Index RAG Store
 
-**Trigger when user says** (any language/form): implement-rag, rag:index, index rag, reindex, index tài liệu, nạp dữ liệu vào rag, cập nhật rag store, index the docs folder, index this jira issue into rag.
+**Trigger when user says** (any language/form): implement-rag, rag:index, index rag, reindex, index tài liệu, nạp dữ liệu vào rag, cập nhật rag store, index the docs folder, index this jira issue into rag, index this confluence page/space into rag.
 
 ---
 
@@ -20,7 +20,10 @@ description: Index the project's docs-drop folder (or a Jira issue/search URL) i
 Read `.claude/qa-agents.config.json` if present, for `ragCollection`.
 
 - **Collection**: `--collection=<name>` from the user's message, else the config's `ragCollection`, else fall back to the CLI's own default (`requirements`) — don't invent a different default.
-- **Source**: if the user's message already names one (a folder path, or a Jira URL — `.../browse/PROJ-123` or a search URL with `jql=`), use it directly and skip the question below.
+- **Source**: if the user's message already names one, use it directly and skip the question below:
+  - a folder path,
+  - a Jira URL (`.../browse/PROJ-123`, or a search URL with `jql=`), or
+  - a Confluence URL (`.../wiki/spaces/SPACEKEY/...` — a single page if it has a `/pages/<id>/` segment, otherwise the whole space).
 
   Otherwise, if the human said nothing more specific than "index rag" / "reindex," don't ask — just run it against the default folder (`docs`); that's the common case and matches what `npm run rag:index` alone would already do.
 
@@ -34,13 +37,15 @@ Read `.claude/qa-agents.config.json` if present, for `ragCollection`.
       description: "Index every .md/.txt/.docx file under docs/ — the default."
     - label: "Jira issue or search"
       description: "Pull one issue or a JQL search's results straight from Jira."
+    - label: "Confluence page or space"
+      description: "Pull one page, or every page in a space, straight from Confluence."
   ```
 
-  If they pick **Jira**, that's a fixed choice but the actual URL isn't — ask for it as a normal follow-up question in chat (not another `AskUserQuestion`, since a URL is free text, not a small option set): "Cho URL Jira issue (.../browse/PROJ-123) hoặc URL search (có ?jql=...)."
+  If they pick **Jira** or **Confluence**, that's a fixed choice but the actual URL isn't — ask for it as a normal follow-up question in chat (not another `AskUserQuestion`, since a URL is free text, not a small option set): "Cho URL Jira issue (.../browse/PROJ-123) hoặc URL search (có ?jql=...)" or "Cho URL Confluence page hoặc space (.../wiki/spaces/SPACEKEY/...)" as applicable.
 
-### Step 2b — Jira credentials, only if the source is Jira
+### Step 2b — Atlassian credentials, only if the source is Jira or Confluence
 
-The CLI needs `JIRA_EMAIL` and `JIRA_API_TOKEN` in `.env.local` (see `.env.example`'s Jira block) — check before running, don't let it fail on a missing-env error:
+Both use the same Atlassian Cloud account, so the same check applies either way. The CLI needs `JIRA_EMAIL` and `JIRA_API_TOKEN` in `.env.local` (see `.env.example`'s Atlassian block) — check before running, don't let it fail on a missing-env error:
 
 1. `Read` `.env.local` at the project root (if it doesn't exist yet, treat both vars as missing).
 2. Check both `JIRA_EMAIL=` and `JIRA_API_TOKEN=` are present with a non-empty value.
@@ -57,8 +62,8 @@ The CLI needs `JIRA_EMAIL` and `JIRA_API_TOKEN` in `.env.local` (see `.env.examp
 
 ```bash
 npm run rag:index -- <folder>              --collection=<collection>
-# or, for a Jira source:
-npm run rag:index -- --url=<jira-issue-or-search-url> --collection=<collection>
+# or, for a Jira or Confluence source:
+npm run rag:index -- --url=<jira-or-confluence-url> --collection=<collection>
 ```
 
 This rebuilds the CLI bundle first (`rag:build` is chained in), so first run is slower — that's expected, not a hang.
@@ -68,7 +73,8 @@ This rebuilds the CLI bundle first (`rag:build` is chained in), so first run is 
 Summarize stdout: files/issues indexed, chunk counts per source, and the final `Done. N chunks indexed into collection "<collection>".` line.
 
 On failure, surface the actual error rather than attempting a fix yourself:
-- `JIRA_EMAIL`/`JIRA_API_TOKEN` missing → point to `.env.local` (see `.env.example`'s Jira block).
+- `JIRA_EMAIL`/`JIRA_API_TOKEN` missing → point to `.env.local` (see `.env.example`'s Atlassian block).
+- Confluence "No Confluence space found for key ..." or a 403/404 → the space key in the URL is wrong, or the Atlassian account behind the token lacks read access to that space — don't retry blindly, tell the human which it looks like.
 - `node:sqlite` / experimental flag errors → this project's Node version doesn't support the default `SqliteStore` backend; point to `guide/rag-guide.md`'s Requirements section for the fallback stores, don't patch Node flags yourself.
 - Any other failure → paste the error verbatim and stop; this command indexes, it doesn't debug the RAG implementation.
 

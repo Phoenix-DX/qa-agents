@@ -142,6 +142,90 @@ async function fetchJiraSearchResults(searchUrl: string): Promise<{ text: string
   return docs;
 }
 
+type ConfluencePage = {
+  id: string;
+  title: string;
+  body?: { storage?: { value?: string } };
+  _links?: { webui?: string };
+};
+
+// Confluence Cloud REST API accepts the same email + API token as Jira Cloud
+// (same Atlassian account, same site) — no separate credential needed.
+function confluenceStorageToText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n')
+    .replace(/<(td|th)[^>]*>/gi, ' | ')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function confluencePageToDoc(origin: string, page: ConfluencePage): { text: string; source: string } {
+  const html = page.body?.storage?.value ?? '';
+  const text = [`Title: ${page.title}`, confluenceStorageToText(html)].filter(Boolean).join('\n\n');
+  const webui = page._links?.webui ?? '';
+  return { text, source: `${page.title} ${origin}/wiki${webui}` };
+}
+
+async function fetchConfluencePage(origin: string, pageId: string): Promise<{ text: string; source: string }> {
+  const apiUrl = `${origin}/wiki/api/v2/pages/${pageId}?body-format=storage`;
+  const res = await fetch(apiUrl, { headers: jiraAuthHeaders() });
+  if (!res.ok) throw new Error(`Confluence API error ${res.status} ${res.statusText} for ${apiUrl}`);
+  const page = (await res.json()) as ConfluencePage;
+  return confluencePageToDoc(origin, page);
+}
+
+async function resolveConfluenceSpaceId(origin: string, spaceKey: string): Promise<string> {
+  const apiUrl = `${origin}/wiki/api/v2/spaces?keys=${encodeURIComponent(spaceKey)}`;
+  const res = await fetch(apiUrl, { headers: jiraAuthHeaders() });
+  if (!res.ok) throw new Error(`Confluence API error ${res.status} ${res.statusText} for ${apiUrl}`);
+  const data = (await res.json()) as { results: { id: string }[] };
+  if (!data.results?.length) throw new Error(`No Confluence space found for key "${spaceKey}" at ${origin}`);
+  return data.results[0].id;
+}
+
+async function fetchConfluenceSpace(spaceUrl: string): Promise<{ text: string; source: string }[]> {
+  const url = new URL(spaceUrl);
+  const match = url.pathname.match(/\/wiki\/spaces\/([^/]+)/);
+  if (!match) {
+    throw new Error(
+      `Could not find a space key in URL: ${spaceUrl}\n` +
+        `Pass a space URL (.../wiki/spaces/SPACEKEY/...) or a single-page URL (.../wiki/spaces/SPACEKEY/pages/12345/...).`,
+    );
+  }
+  const spaceKey = match[1];
+  const { origin } = url;
+  const spaceId = await resolveConfluenceSpaceId(origin, spaceKey);
+
+  const limit = 100;
+  const safetyCap = 1500;
+  const docs: { text: string; source: string }[] = [];
+  let next: string | undefined = `/wiki/api/v2/spaces/${spaceId}/pages?limit=${limit}&body-format=storage`;
+
+  while (next && docs.length < safetyCap) {
+    const res = await fetch(`${origin}${next}`, { headers: jiraAuthHeaders() });
+    if (!res.ok) throw new Error(`Confluence API error ${res.status} ${res.statusText} listing pages for space "${spaceKey}"`);
+
+    const data = (await res.json()) as { results: ConfluencePage[]; _links?: { next?: string } };
+    for (const page of data.results) docs.push(confluencePageToDoc(origin, page));
+    next = data._links?.next;
+  }
+
+  if (next) {
+    console.log(`Note: space "${spaceKey}" has more pages than the safety cap — only indexing the first ${docs.length}.`);
+  }
+
+  return docs;
+}
+
 async function cmdIndex(folder: string, collection: string): Promise<void> {
   const files = walk(folder);
   if (files.length === 0) {
@@ -165,11 +249,20 @@ async function cmdIndex(folder: string, collection: string): Promise<void> {
 }
 
 async function cmdIndexUrl(rawUrl: string, collection: string): Promise<void> {
-  const isSearch = new URL(rawUrl).searchParams.has('jql');
-  const docs = isSearch ? await fetchJiraSearchResults(rawUrl) : [await fetchJiraIssue(rawUrl)];
+  const url = new URL(rawUrl);
+  const isConfluence = url.pathname.includes('/wiki/spaces/');
+  const pageIdMatch = isConfluence ? url.pathname.match(/\/wiki\/spaces\/[^/]+\/pages\/(\d+)/) : null;
+
+  const docs = isConfluence
+    ? pageIdMatch
+      ? [await fetchConfluencePage(url.origin, pageIdMatch[1])]
+      : await fetchConfluenceSpace(rawUrl)
+    : url.searchParams.has('jql')
+      ? await fetchJiraSearchResults(rawUrl)
+      : [await fetchJiraIssue(rawUrl)];
 
   if (docs.length === 0) {
-    console.log('No issues matched.');
+    console.log(isConfluence ? 'No pages found.' : 'No issues matched.');
     return;
   }
 

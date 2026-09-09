@@ -53,6 +53,32 @@ not your account password).
 
 ---
 
+## Confluence page / space
+
+`rag-cli` can also pull straight from Confluence Cloud's REST API — same
+credentials as Jira (`JIRA_EMAIL` / `JIRA_API_TOKEN`, same Atlassian
+account/site):
+
+```bash
+# a single page (URL contains /pages/<id>/):
+npm run rag:index -- --url=https://<your-domain>.atlassian.net/wiki/spaces/SPACEKEY/pages/12345/Some+Title
+# or a whole space (no /pages/<id>/ segment) — walks every page in it:
+npm run rag:index -- --url=https://<your-domain>.atlassian.net/wiki/spaces/SPACEKEY/overview
+```
+
+Notes:
+- Indexing a space walks all pages under that space key via the Confluence
+  v2 API (paginated) — nested/child pages included, no need to link each one
+  individually.
+- The Atlassian account behind the token needs read access to the space.
+- Content comes from each page's storage-format body, stripped down to
+  plain text (tables/lists kept as `|`/`-` separated lines, Confluence-only
+  macros dropped) — not a full-fidelity Markdown conversion.
+- A large space can mean a lot of chunks; there's a 1500-page safety cap per
+  run, same idea as the Jira JQL cap above.
+
+---
+
 ## PDF
 
 `rag-cli` does **not** parse `.pdf` today (only `.md`/`.txt`/`.docx`). To
@@ -68,7 +94,8 @@ index one, convert it to Markdown first:
 
 ## URL / web page
 
-Also not auto-fetched. Convert manually:
+Also not auto-fetched (Confluence is the exception — see above). Convert
+manually for anything else:
 
 1. Ask Claude to fetch the page (`WebFetch`).
 2. Have Claude strip navigation/ads/boilerplate and keep just the

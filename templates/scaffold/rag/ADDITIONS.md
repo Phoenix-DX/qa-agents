@@ -74,7 +74,9 @@ Skip the `/dist/` line if the `core` layer already added a generic one —
 ## 6. .env.example — lines to add (optional block)
 
 ```
-# Only needed for `npm run rag:index -- --url=<jira-issue-or-search-url>`
+# Atlassian Cloud account (email + API token) — only needed for
+# `npm run rag:index -- --url=<...>` against a Jira issue/search URL or a
+# Confluence page/space URL (same token works for both, same site/account)
 JIRA_EMAIL=
 JIRA_API_TOKEN=
 ```
