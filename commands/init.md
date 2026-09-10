@@ -49,7 +49,7 @@ Playwright/POM/TS project, generalized) under this plugin's own
 | `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs) + `.claude/settings.local.json` (pre-enables it, see Step 0b), `.gitignore`, `.env.example` (secrets template — copy to `.env.local`), `.env.uat` (a real, committed placeholder — only `BASE_URL` needs a working value to run anything), `README.md` (generic human-facing setup/run doc, TODO-marked) + `CLAUDE.md` (generic project-instructions starter), `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
 | `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
 | `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
-| `rag` | Installs a **private** RAG CLI (e.g. `@phoenix-dx/rag-cli`) as a normal npm dependency — org policy is to never vendor RAG source into a target repo, so this is the only mode this plugin offers. Adds `.npmrc.example` (template — the real `.npmrc` holding the token is gitignored, per-project, never committed), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:index`/`rag:query` scripts, and a "RAG setup" section inserted into `README.md` if one exists. Needs the private package's name — see Step 3c |
+| `rag` | Installs `@phoenix-dx/rag-cli` as a normal npm dependency — org policy is to never vendor RAG source into a target repo, and there's exactly one private RAG package, so this plugin doesn't ask about either. Adds `.npmrc.example` (template — the real `.npmrc` holding the token is gitignored, per-project, never committed), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:index`/`rag:query` scripts, and a "RAG setup" section inserted into `README.md` if one exists. Only asks whether to do it now or later — see Step 3c |
 
 1. **Detect what's already there** before asking anything: check for
    `playwright.config.ts`, `tsconfig.json`, `.mcp.json`, a POM directory (per
@@ -65,10 +65,9 @@ Playwright/POM/TS project, generalized) under this plugin's own
    that instead of asking a vacuous question. Otherwise ask, via
    `AskUserQuestion` (single-select), how they want to proceed. (Every
    literal question/option string shown anywhere in this file, including
-   3c below, is written in English for the document's own consistency —
-   actually phrase it in whatever language the human has been using in
-   this conversation, don't output the English verbatim to a non-English
-   speaker.):
+   3c below, is asked in **English, always** — regardless of what language
+   the human is chatting in. Don't localize these; this org standardized on
+   English tooling output on purpose.):
    - **Default** — scaffold every layer that has anything missing, using
      this plugin's generic templates as-is (no per-layer picking). Best for
      an empty or near-empty project that just wants the whole starter
@@ -85,36 +84,33 @@ Playwright/POM/TS project, generalized) under this plugin's own
    - **3c. If `rag` ends up selected** (Default or Custom) and it wasn't
      already present per Step 1's detection: there's no open-vs-private
      question anymore — this plugin only scaffolds the private variant,
-     full stop, in both Default and Custom mode. But it still needs one
-     piece of info that can't be invented (the private package's full
-     name), so ask a two-step question rather than burying "skip" as a
-     hidden free-text option:
+     full stop, in both Default and Custom mode. There's also no
+     package-name question anymore — `{{RAG_PACKAGE_NAME}}` is always
+     `@phoenix-dx/rag-cli` and `{{RAG_PACKAGE_SCOPE}}` is always
+     `@phoenix-dx` (this org has exactly one private RAG package; don't
+     ask about something that isn't actually a choice). Just one real
+     question remains — timing, not what:
+     ```
+     question: "The rag layer needs @phoenix-dx/rag-cli installed — set it up now or later?"
+     header: "RAG setup"
+     options:
+       - label: "Set it up now (Recommended)"
+         description: "Add @phoenix-dx/rag-cli now — still needs a .npmrc token before npm install works, see ADDITIONS.md Step 6."
+       - label: "Skip for now"
+         description: "No token ready yet — re-run /qa-agents:init any time to add the rag layer later."
+     ```
+     - **If "Set it up now"** — proceed straight to scaffolding with
+       `{{RAG_PACKAGE_NAME}}`/`{{RAG_PACKAGE_SCOPE}}` filled in as above,
+       no further question.
+     - **If "Skip for now"** — drop `rag` from this run's selected
+       layers entirely right there: don't scaffold it, don't guess.
+       Note in the Step 5 report that RAG was skipped and how to add it
+       later (re-run `/qa-agents:init`, Custom mode, pick just `rag`).
+       This is a normal, expected outcome, not an error.
 
-     1. First, `AskUserQuestion` (single-select) — a real, visible choice,
-        not a text-box escape hatch:
-        ```
-        question: "The rag layer needs a private npm package to install — set it up now or later?"
-        header: "RAG setup"
-        options:
-          - label: "Set it up now (Recommended)"
-            description: "Enter your private RAG package's name right now (e.g. @phoenix-dx/rag-cli)."
-          - label: "Skip for now"
-            description: "No package/token ready yet — re-run /qa-agents:init any time to add the rag layer later."
-        ```
-     2. **If "Set it up now"** — ask one normal follow-up chat question
-        (free text, not `AskUserQuestion` — a package name isn't a small
-        fixed set), suggesting `@phoenix-dx/rag-cli` as the default: "What's
-        the full name of your private RAG npm package? (default:
-        @phoenix-dx/rag-cli)". Derive `{{RAG_PACKAGE_NAME}}` (the full
-        answer) and `{{RAG_PACKAGE_SCOPE}}` (the `@scope` segment before
-        `/`) from it — `templates/scaffold/rag/ADDITIONS.md` substitutes
-        both, same mechanism as `{{APP_SLUG}}`.
-     3. **If "Skip for now"** — drop `rag` from this run's selected
-        layers entirely right there, no follow-up question: don't
-        scaffold it, don't write a placeholder package name, don't guess.
-        Note in the Step 5 report that RAG was skipped and how to add it
-        later (re-run `/qa-agents:init`, Custom mode, pick just `rag`).
-        This is a normal, expected outcome, not an error.
+     If a human explicitly names a *different* package in their own
+     message (unprompted — this org occasionally has a one-off reason
+     to), honor that instead of the default; just don't ask for it.
 
      Skip this whole 3c flow if the project already has the `rag` layer
      present (per Step 1) — don't re-ask.
@@ -262,8 +258,8 @@ that's how `intent-mapping.md` has gone missing in practice before:
      - label: "intent-mapping.md (Recommended)"
        description: "Natural-language intent -> POM method mapping — read by pom-discoverer/test-designer."
    ```
-   (Phrase it in the human's own language, as with every other literal
-   question in this plugin.)
+   (Always in English, as with every other literal question in this
+   plugin — not localized to the human's chat language.)
 3. For each one picked, adapt every `{{...}}` placeholder and bracketed
    TODO using what Step 1-2 gathered, and write the result to
    `<target>/.claude/docs/<file>`. Skip anything you don't have real
@@ -287,7 +283,7 @@ Tell the human:
 - That `.env.uat` (if scaffolded) has a placeholder `BASE_URL=https://example.com` — replace it with the app's real UAT URL before running any spec.
 - That `CLAUDE.md` and `README.md` (if scaffolded) are generic starters with `TODO(init)` markers — point out they should be revisited once conventions are confirmed, and note either was skipped if the project already had one.
 - **If the `rag` layer was scaffolded**: that `npm install` will fail until they copy `.npmrc.example` to `.npmrc` (project root, gitignored, never committed) and fill in a personal GitHub PAT with `read:packages` scope — this has to be re-done after every fresh clone, and cannot go in `.env.local` (see the `rag` layer's `ADDITIONS.md` Step 6, and the "RAG setup" section just inserted into `README.md` if one exists). Say this every time the layer is scaffolded, not just once.
-- **If the `rag` layer was skipped** (per Step 3c, no package name given): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`, once the package name and a `.npmrc` token are ready).
+- **If the `rag` layer was skipped** (per Step 3c, "Skip for now" chosen): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`, once a `.npmrc` token is ready).
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
 - Whether **each** of framework-rules.md and intent-mapping.md was written or skipped, and why (already present vs. declined) — report on both individually, never just one.

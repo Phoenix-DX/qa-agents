@@ -33,7 +33,7 @@ Read `.claude/qa-agents.config.json` if present, for `ragCollection`.
 
   Otherwise, if the human said nothing more specific than "index rag" / "reindex," don't ask — just run it against the default folder (`docs`); that's the common case and matches what `npm run rag:index` alone would already do.
 
-  Only ask when it's genuinely ambiguous (e.g. the human said "index my docs" with no path/URL and `docs/` looks empty or isn't obviously it). Use `AskUserQuestion` (single-select) — this is a fixed set of choices, so it fits the tool. (Phrase the question/option text in the human's own language — shown in English below only for the document's own consistency.):
+  Only ask when it's genuinely ambiguous (e.g. the human said "index my docs" with no path/URL and `docs/` looks empty or isn't obviously it). Use `AskUserQuestion` (single-select) — this is a fixed set of choices, so it fits the tool. (Always ask in English, regardless of what language the human is chatting in — this org standardized on English tooling output.):
 
   ```
   question: "Which source do you want to index?"
@@ -47,7 +47,7 @@ Read `.claude/qa-agents.config.json` if present, for `ragCollection`.
       description: "Pull one page, or every page in a space, straight from Confluence."
   ```
 
-  If they pick **Jira** or **Confluence**, that's a fixed choice but the actual URL isn't — ask for it as a normal follow-up question in chat (not another `AskUserQuestion`, since a URL is free text, not a small option set): "What's the Jira issue URL (.../browse/PROJ-123) or search URL (with ?jql=...)?" or "What's the Confluence page or space URL (.../wiki/spaces/SPACEKEY/...)?" as applicable. (Like every literal question string in this file, phrase it in whatever language the human has been using in this conversation — shown in English here only for the document's own consistency.)
+  If they pick **Jira** or **Confluence**, that's a fixed choice but the actual URL isn't — ask for it as a normal follow-up question in chat (not another `AskUserQuestion`, since a URL is free text, not a small option set), always in English: "What's the Jira issue URL (.../browse/PROJ-123) or search URL (with ?jql=...)?" or "What's the Confluence page or space URL (.../wiki/spaces/SPACEKEY/...)?" as applicable.
 
 ### Step 2b — Atlassian credentials, only if the source is Jira or Confluence
 

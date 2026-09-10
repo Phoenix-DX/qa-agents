@@ -81,8 +81,9 @@ Criteria" section — this is what `test-designer` will design against and
 before spending agent calls on test design.
 
 1. Show the user the draft AC list as-is (the actual bullets, not a summary).
-2. Ask via `AskUserQuestion`: "Acceptance Criteria này đã đúng ý chưa?" (or
-   English equivalent, match the user's language).
+2. Ask via `AskUserQuestion`, always in English regardless of what
+   language the human is chatting in: "Does this Acceptance Criteria list
+   look right?"
    - Options: **Approve** / **Request changes** (free-text "Other" doubles as
      the changes description).
 3. **Approve** → write the approved list to `<casesDir>/<feature-name>.ac.md`
@@ -179,9 +180,9 @@ Map's draft IDs into real TC file IDs.
 
 ## Step 6 — Human confirmation loop (do not skip, do not proceed without explicit approval)
 
-Show the user the generated TC content (the actual table, not just a summary), the updated Acceptance Criteria checklist from Step 5.5, and any flags from Step 5 — call out any unchecked AC item by name so the human can decide whether it's a real gap or acceptable to ship without. Ask via `AskUserQuestion`:
+Show the user the generated TC content (the actual table, not just a summary), the updated Acceptance Criteria checklist from Step 5.5, and any flags from Step 5 — call out any unchecked AC item by name so the human can decide whether it's a real gap or acceptable to ship without. Ask via `AskUserQuestion`, always in English regardless of what language the human is chatting in:
 
-- Question: "Test cases này đã đúng ý chưa?" (or English equivalent, match the user's language)
+- Question: "Do these test cases look right?"
 - Options: **Approve** / **Request changes** (free-text "Other" doubles as the changes description)
 
 - **Approve** → Step 7.

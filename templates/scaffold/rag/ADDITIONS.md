@@ -12,15 +12,13 @@
      as any RAG-backed project — usage is identical, only where the CLI
      binary comes from differs.
 
-     Needs one piece of info from the human before applying: the private
-     package's full name (scope + name), e.g. `@phoenix-dx/rag-cli`. Ask
-     for it as a normal chat question (free text, not AskUserQuestion — this
-     isn't a small fixed set) if not already stated, suggesting
-     `@phoenix-dx/rag-cli` as the default since that's this org's existing
-     package. Derive `{{RAG_PACKAGE_NAME}}` (the full name) and
-     `{{RAG_PACKAGE_SCOPE}}` (the `@scope` part before the `/`) from the
-     answer and substitute both wherever they appear below, same mechanism
-     as `{{APP_SLUG}}` elsewhere in this plugin. -->
+     `{{RAG_PACKAGE_NAME}}` is always `@phoenix-dx/rag-cli` and
+     `{{RAG_PACKAGE_SCOPE}}` is always `@phoenix-dx` — this org has
+     exactly one private RAG package, so init.md's Step 3c doesn't ask
+     about it, just substitutes both wherever they appear below (same
+     mechanism as `{{APP_SLUG}}` elsewhere in this plugin). Only honor a
+     different package name if the human explicitly names one unprompted
+     in their own message. -->
 
 ## 1. Source files (copied as-is by Step 0.3)
 
