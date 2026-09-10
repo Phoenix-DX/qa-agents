@@ -80,25 +80,39 @@ Playwright/POM/TS project, generalized) under this plugin's own
    - **3c. If `rag` ends up selected** (Default or Custom) and it wasn't
      already present per Step 1's detection: there's no open-vs-private
      question anymore — this plugin only scaffolds the private variant,
-     full stop, in both Default and Custom mode. It still needs one piece
-     of info that can't be invented: the private package's full name (scope
-     + name). Ask it as a normal chat question (free text, not
-     `AskUserQuestion` — this isn't a small fixed set), suggesting
-     `@phoenix-dx/rag-cli` as the default, and explicitly offering to skip:
-     "Tên npm package RAG private của bạn là gì? (mặc định:
-     @phoenix-dx/rag-cli — hoặc gõ 'bỏ qua' nếu chưa có token/package sẵn,
-     làm sau cũng được)". Derive `{{RAG_PACKAGE_NAME}}` (the full answer)
-     and `{{RAG_PACKAGE_SCOPE}}` (the `@scope` segment before `/`) from it —
-     `templates/scaffold/rag/ADDITIONS.md` substitutes both, same
-     mechanism as `{{APP_SLUG}}`. Skip the question if the project already
-     has this layer present (per Step 1) — don't re-ask.
-     - **If they skip** (any answer meaning "later" — "bỏ qua", "skip",
-       "sau", empty/no answer): drop `rag` from this run's selected layers
-       entirely — don't scaffold it, don't write a placeholder package
-       name, don't guess. Note in the Step 5 report that RAG was skipped
-       and how to add it later: re-run `/qa-agents:init` in Custom mode and
-       pick just `rag` once the package name (and eventually a `.npmrc`
-       token) are ready. This is a normal, expected outcome, not an error.
+     full stop, in both Default and Custom mode. But it still needs one
+     piece of info that can't be invented (the private package's full
+     name), so ask a two-step question rather than burying "skip" as a
+     hidden free-text option:
+
+     1. First, `AskUserQuestion` (single-select) — a real, visible choice,
+        not a text-box escape hatch:
+        ```
+        question: "Layer rag cần 1 npm package RAG private để cài — làm luôn hay để sau?"
+        header: "RAG setup"
+        options:
+          - label: "Cấu hình ngay (Recommended)"
+            description: "Nhập tên npm package RAG private ngay bây giờ (vd @phoenix-dx/rag-cli)."
+          - label: "Bỏ qua, làm sau"
+            description: "Chưa có package/token sẵn — chạy /qa-agents:init lại bất cứ lúc nào để thêm layer rag sau."
+        ```
+     2. **If "Cấu hình ngay"** — ask one normal follow-up chat question
+        (free text, not `AskUserQuestion` — a package name isn't a small
+        fixed set), suggesting `@phoenix-dx/rag-cli` as the default: "Tên
+        npm package RAG private của bạn là gì? (mặc định:
+        @phoenix-dx/rag-cli)". Derive `{{RAG_PACKAGE_NAME}}` (the full
+        answer) and `{{RAG_PACKAGE_SCOPE}}` (the `@scope` segment before
+        `/`) from it — `templates/scaffold/rag/ADDITIONS.md` substitutes
+        both, same mechanism as `{{APP_SLUG}}`.
+     3. **If "Bỏ qua, làm sau"** — drop `rag` from this run's selected
+        layers entirely right there, no follow-up question: don't
+        scaffold it, don't write a placeholder package name, don't guess.
+        Note in the Step 5 report that RAG was skipped and how to add it
+        later (re-run `/qa-agents:init`, Custom mode, pick just `rag`).
+        This is a normal, expected outcome, not an error.
+
+     Skip this whole 3c flow if the project already has the `rag` layer
+     present (per Step 1) — don't re-ask.
 4. **For each selected layer**, copy every file from this plugin's
    `templates/scaffold/<layer>/` into the equivalent path in the target
    project — including dotfiles like `.mcp.json` (don't let a hidden-file
