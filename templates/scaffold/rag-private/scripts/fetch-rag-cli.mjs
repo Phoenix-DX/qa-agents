@@ -13,7 +13,12 @@ const token = process.env.RAG_ARTIFACT_TOKEN;
 if (!url) throw new Error('RAG_ARTIFACT_URL is not set in .env.local — see .env.example.');
 if (!token) throw new Error('RAG_ARTIFACT_TOKEN is not set in .env.local — see .env.example.');
 
-const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+// The extra Accept header is what makes a GitHub Releases asset URL
+// (api.github.com/repos/.../releases/assets/<id>) return the raw binary
+// instead of JSON metadata — harmless for other hosts (S3/GCS/etc.).
+const res = await fetch(url, {
+  headers: { Authorization: `Bearer ${token}`, Accept: 'application/octet-stream' },
+});
 if (!res.ok) {
   throw new Error(`Failed to fetch the RAG CLI bundle: ${res.status} ${res.statusText} from ${url}`);
 }
