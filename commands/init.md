@@ -28,7 +28,7 @@ copies/edits several files. Keep the terminal output clean instead of noisy:
   Fill in the bar (`■`/`□`, one block per step) and the step number/label
   for that step. Use these six labels in order: `Scaffold check`, `Scanning
   conventions`, `Confirming conventions with you`, `Writing config`,
-  `Writing framework-rules doc`, `Final report`.
+  `Writing reference docs`, `Final report`.
 - While scanning (Step 0's detection pass and Step 1), do the Glob/Read/Grep
   work silently — do not paste the file contents, matched snippets, or
   command output you read into the chat. Only turn what you found into a
@@ -46,7 +46,7 @@ Playwright/POM/TS project, generalized) under this plugin's own
 
 | Layer | Adds |
 |---|---|
-| `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs) + `.claude/settings.local.json` (pre-enables it, see Step 0b), `.gitignore`, `.env.example` (secrets template — copy to `.env.local`), `.env.uat` (a real, committed placeholder — only `BASE_URL` needs a working value to run anything), `README.md` (generic human-facing setup/run doc, TODO-marked) + `CLAUDE.md` (generic project-instructions starter), `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
+| `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs) + `.claude/settings.local.json` (pre-enables it, see Step 0b), `.gitignore`, `.env.example` (secrets template — copy to `.env.local`), `.env.uat` (a real, committed placeholder — only `BASE_URL` needs a working value to run anything), `README.md` (generic human-facing setup/run doc, TODO-marked) + `CLAUDE.md` (generic project-instructions starter), `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts`, `src/cases/` (empty, `.gitkeep` only — the default `casesDir`) |
 | `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
 | `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
 | `rag` | Installs `@phoenix-dx/rag-cli` as a normal npm dependency — org policy is to never vendor RAG source into a target repo, and there's exactly one private RAG package, so this plugin doesn't ask about either. Adds `.npmrc.example` (template — the real `.npmrc` holding the token is gitignored, per-project, never committed), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:index`/`rag:query` scripts, and a "RAG setup" section inserted into `README.md` if one exists. Only asks whether to do it now or later — see Step 3c |
@@ -205,7 +205,7 @@ Before asking the human anything, look for evidence yourself:
    - Do they call low-level page-interaction methods directly, or only POM methods?
    - What test header/name format do they use, if any?
    - What do they import, and from where (a custom fixture, or the test runner directly)?
-4. Look for a test-case source directory (markdown/other format describing scenarios before they become specs) — often near the spec directory or under a `cases`/`test-cases` folder.
+4. Look for a test-case source directory (markdown/other format describing scenarios before they become specs) — often near the spec directory or under a `cases`/`test-cases` folder. If none exists yet (fresh project, or `core` layer just scaffolded `src/cases/`), `src/cases/` is the default `casesDir` — don't ask about this one, just use it, same as `src/pages`/`src/tests` aren't asked about either.
 5. Look for a lint command in `package.json` scripts (e.g. `lint`, `lint:file`).
 6. Check RAG setup — the `knowledge-retriever` agent expects a per-project `npm run rag:query` script backed by this plugin's own vendored `src/rag/` implementation (see Step 0's `rag` layer), not a global tool install:
    - `Glob`/`Grep` for `src/rag/index.ts` and a `rag:query` script in `package.json`. If neither is there, RAG is simply unavailable here — that's normal, not an error; offer the `rag` scaffold layer (Step 0) rather than telling the human to install anything externally.
@@ -219,7 +219,7 @@ Show what you found (or didn't) and ask, in one pass — don't interrogate field
 
 - POM directory (confirm or correct what you inferred)
 - Spec directory
-- Test-case source directory (or "none — TCs aren't tracked as files here")
+- Test-case source directory — state the default (`src/cases/`, existing or just scaffolded) or whatever Step 1 found instead; only ask if genuinely ambiguous (e.g. TCs demonstrably live somewhere else already, or aren't tracked as files at all)
 - Fixture import path, if specs use one (e.g. for an API client)
 - Spec/POM style rules — for each, "yes, enforced" / "no" / "mixed, don't enforce":
   - Locators must be `readonly` constructor fields (not created inside methods)
@@ -241,7 +241,7 @@ Write `.claude/qa-agents.config.json` in the target project:
   "pomDir": "<path>",
   "basePageFile": "<path to shared base POM class, if any>",
   "specDir": "<path>",
-  "casesDir": "<path, or null if TCs aren't tracked as files>",
+  "casesDir": "<path — defaults to src/cases/ for a fresh scaffold, else wherever Step 1 found existing TCs, or null if TCs aren't tracked as files at all>",
   "fixtureImport": "<import path, or null>",
   "lintCommand": "<command, or null>",
   "ragCollection": "<collection name this project's vendored rag-cli holds its docs under, or null if not indexed yet>",
@@ -260,42 +260,24 @@ Write `.claude/qa-agents.config.json` in the target project:
 
 Every `rules.*` flag is a boolean (or number for the threshold) reflecting what Step 2 confirmed — set to `false`/`null` rather than guessing `true` for anything not actually confirmed as enforced in this project.
 
-## Step 4 — Offer to write the project's own reference docs (optional but recommended)
+## Step 4 — Write the project's own reference docs
 
-Two independent docs, each written from this plugin's own template
-(`docs/framework-rules.template.md`, `docs/intent-mapping.template.md`)
-into `<target>/.claude/docs/`. Treat them as two separate offers — don't
-let asking about one silently substitute for asking about the other,
-that's how `intent-mapping.md` has gone missing in practice before:
+`.claude/docs/` gets all three of these by default — no question, no
+opt-in. They're a standard part of every project this plugin sets up:
 
-1. For each of `framework-rules.md` / `intent-mapping.md`, check whether
-   the target project already has it — skip asking about whichever
-   already exists (don't overwrite existing work).
-2. For whichever is still missing, ask via `AskUserQuestion` (multiSelect
-   — both can be picked at once, or neither):
-   ```
-   question: "Write project-specific reference docs from what was just found?"
-   header: "Reference docs"
-   options:
-     - label: "framework-rules.md (Recommended)"
-       description: "Spec/POM discipline, locators, login pattern, naming — read by code-fixer/compliance-checker/pom-author."
-     - label: "intent-mapping.md (Recommended)"
-       description: "Natural-language intent -> POM method mapping — read by pom-discoverer/test-designer."
-   ```
-   (Always in English, as with every other literal question in this
-   plugin — not localized to the human's chat language.)
-3. For each one picked, adapt every `{{...}}` placeholder and bracketed
-   TODO using what Step 1-2 gathered, and write the result to
-   `<target>/.claude/docs/<file>`. Skip anything you don't have real
-   evidence for — leave it as an explicit `<TODO: fill in>` rather than
-   inventing plausible-sounding content, matching the same "never invent,
-   flag instead" discipline the other agents follow.
-4. For each one **not** written — whether already present or declined —
-   note which of those two reasons applies in the Step 5 report. Don't
-   just mention framework-rules.md and let intent-mapping.md quietly
-   disappear from the report.
+1. **`framework-rules.md`** — from this plugin's `docs/framework-rules.template.md`, adapting every `{{...}}` placeholder and bracketed TODO using what Step 1-2 gathered.
+2. **`intent-mapping.md`** — same treatment, from `docs/intent-mapping.template.md`. Write it unconditionally, same as framework-rules.md — don't let it quietly disappear the way it used to when this was framed as an optional add-on to the framework-rules.md offer.
+3. **`healing-rules.md`** — copy `docs/healing-rules.md` as-is (it's app-agnostic P1/P2 troubleshooting), unless the human's answers changed which P2 rules apply, in which case adjust its P2 checklist table to match `rules.*` from the config.
 
-Copy `docs/healing-rules.md` as-is (it's app-agnostic P1/P2 troubleshooting) unless the human's answers changed which P2 rules apply — in that case, adjust its P2 checklist table to match `rules.*` from the config.
+For each of the three: skip writing it only if the target project
+already has a file at that exact path (don't overwrite existing work —
+note the skip in Step 5). Otherwise write it, full stop, regardless of
+project size or how empty/full the project is. Skip anything you don't
+have real evidence for when filling in framework-rules.md/intent-mapping.md
+— leave it as an explicit `<TODO: fill in>` rather than inventing
+plausible-sounding content, matching the "never invent, flag instead"
+discipline the other agents follow — that's the mechanism for handling
+missing information here, not skipping the file entirely.
 
 ## Step 5 — Report
 
@@ -310,5 +292,5 @@ Tell the human:
 - **If the `rag` layer was skipped** (per Step 3c, "Skip for now" chosen): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`).
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
-- Whether **each** of framework-rules.md and intent-mapping.md was written or skipped, and why (already present vs. declined) — report on both individually, never just one.
+- Whether **each** of framework-rules.md, intent-mapping.md, and healing-rules.md was written or skipped because it already existed — report on all three individually, never just one, and flag any `<TODO: fill in>` left in the two templated ones so the human knows what still needs real project evidence.
 - That they can re-run `/qa-agents:init` any time conventions change.

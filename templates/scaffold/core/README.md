@@ -55,12 +55,11 @@ npm run lint:fix
 src/
 ├── pages/          POMs (base.page.ts + one file per page/feature)
 ├── tests/          Playwright specs
+├── cases/          TC source markdown (default casesDir — see config)
 ├── utils/env.ts     requireEnv() helper
 ├── auth/            saved storageState (gitignored)
 └── global.setup.ts  auth starter — replace with the app's real login flow,
                       or delete if the app needs no auth
-
-<casesDir from .claude/qa-agents.config.json>   TC source markdown
 ```
 
 Not every branch above exists in every project — see

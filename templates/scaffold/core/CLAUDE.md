@@ -48,6 +48,7 @@ them in from the project's real conventions instead of guessing.
 src/
 ├── pages/                 POMs (base.page.ts + one file per page/feature)
 ├── tests/                 Playwright specs
+├── cases/                 TC source markdown (default casesDir — see config)
 ├── fixtures/               custom.fixture.ts — test.extend wiring, if applicable
 ├── utils/env.ts            requireEnv() helper
 ├── auth/                   saved storageState (gitignored) — written by global.setup.ts
@@ -58,14 +59,16 @@ src/
 
 k6/                          perf tests (smoke/load/stress) — only if the
                               api-k6 layer was scaffolded
-docs/, scripts/rag-cli.ts,
-src/rag/, guide/rag-guide.md — RAG ingestion — only if the rag layer was
-                              scaffolded
-<casesDir from the config>   TC source markdown
+docs/, guide/rag-guide.md,
+.npmrc.example                RAG ingestion (private npm package, no vendored
+                              source) — only if the rag layer was scaffolded
 ```
 
-Not every branch above exists in every project — it depends on which
-scaffold layers were actually applied at `/qa-agents:init` time (see
+`casesDir` in `.claude/qa-agents.config.json` may point elsewhere if the
+project already had its own test-case directory before `/qa-agents:init`
+ran — `src/cases/` is only the default for a fresh scaffold. Not every
+branch above exists in every project — it depends on which scaffold
+layers were actually applied at `/qa-agents:init` time (see
 `.claude/qa-agents.config.json` for what's real here).
 
 ---
