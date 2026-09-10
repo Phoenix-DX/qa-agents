@@ -228,6 +228,7 @@ Tell the human:
 - That `src/pages/example/login.page.ts` / `src/global.setup.ts` (if scaffolded) are TODO-marked starters needing a real `dom-inspector` + `pom-author` pass, or deletion if the app needs no auth.
 - That `.env.uat` (if scaffolded) has a placeholder `BASE_URL=https://example.com` — replace it with the app's real UAT URL before running any spec.
 - That `CLAUDE.md` and `README.md` (if scaffolded) are generic starters with `TODO(init)` markers — point out they should be revisited once conventions are confirmed, and note either was skipped if the project already had one.
+- **If the `rag` layer was scaffolded**: that `npm install` will fail until they add a personal GitHub PAT (`read:packages` scope) to their **global** `~/.npmrc` — this is a one-time per-machine setup, never written to any file in this project, and cannot go in `.env.local` (see the `rag` layer's `ADDITIONS.md` Step 6 for the exact lines). Say this every time the layer is scaffolded, not just once.
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
 - Whether framework-rules.md / intent-mapping.md were written or skipped, and why.
