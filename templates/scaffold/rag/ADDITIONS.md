@@ -98,13 +98,16 @@ template includes this block by default. This is the *only* credential
 that belongs in `.env.local` for this layer — see Step 6 for why the
 registry token does not.
 
-## 6. Tell the human explicitly — registry auth can't live in `.env.local`
+## 6. Registry auth can't live in `.env.local` — token goes in `.npmrc` directly
 
 Installing `{{RAG_PACKAGE_NAME}}` requires a token *before* `npm install`
 even runs, so it can't be loaded the way `JIRA_EMAIL`/`JIRA_API_TOKEN` are
 (those load via `dotenv` inside application code, which only runs after
-install already succeeded — too late for `npm install` itself). Tell the
-human, plainly, once:
+install already succeeded — too late for `npm install` itself).
+
+If `init.md`'s Step 3d already collected a token and wrote the real
+`.npmrc`, this is done — just confirm it in the Step 5 report, don't
+redo it. Otherwise, tell the human, plainly, once:
 
 - Copy `.npmrc.example` to `.npmrc` **at this project's root** and fill in
   their own token — this file is gitignored, never committed, and lives

@@ -99,14 +99,38 @@ Playwright/POM/TS project, generalized) under this plugin's own
        - label: "Skip for now"
          description: "No token ready yet — re-run /qa-agents:init any time to add the rag layer later."
      ```
-     - **If "Set it up now"** — proceed straight to scaffolding with
+     - **If "Set it up now"** — proceed to scaffolding with
        `{{RAG_PACKAGE_NAME}}`/`{{RAG_PACKAGE_SCOPE}}` filled in as above,
-       no further question.
+       then also ask about the token before `npm install` gets run (see
+       Step 3d below) — don't leave that for the human to remember on
+       their own if they already have it in hand.
      - **If "Skip for now"** — drop `rag` from this run's selected
        layers entirely right there: don't scaffold it, don't guess.
        Note in the Step 5 report that RAG was skipped and how to add it
        later (re-run `/qa-agents:init`, Custom mode, pick just `rag`).
        This is a normal, expected outcome, not an error.
+
+   - **3d. If "Set it up now" was picked in 3c**, ask one normal follow-up
+     chat question (free text, not `AskUserQuestion` — a token is a
+     secret, not a small option set), in English: "Do you already have a
+     GitHub Packages PAT (`read:packages` scope) ready? Paste it now and
+     I'll write it straight into `.npmrc`, or say no/skip and fill in
+     `.npmrc` yourself later before running `npm install`."
+     - **If they paste a token** — write it directly to the real,
+       gitignored `.npmrc` at the project root (not `.npmrc.example`):
+       ```
+       {{RAG_PACKAGE_SCOPE}}:registry=https://npm.pkg.github.com
+       //npm.pkg.github.com/:_authToken=<the token they gave>
+       ```
+       Create the file fresh if it doesn't exist yet (don't copy
+       `.npmrc.example` first and edit it — that file keeps the
+       `<YOUR_TOKEN>` placeholder for reference, this is a separate real
+       file). Never echo the token value back in any response — after
+       writing, confirm only that `.npmrc` was created, not what it
+       contains.
+     - **If they skip** — don't create `.npmrc` at all; `.npmrc.example`
+       is enough for them to fill in themselves before `npm install`
+       works. Note in the Step 5 report that this step is still pending.
 
      If a human explicitly names a *different* package in their own
      message (unprompted — this org occasionally has a one-off reason
@@ -282,8 +306,8 @@ Tell the human:
 - That `src/pages/example/login.page.ts` / `src/global.setup.ts` (if scaffolded) are TODO-marked starters needing a real `dom-inspector` + `pom-author` pass, or deletion if the app needs no auth.
 - That `.env.uat` (if scaffolded) has a placeholder `BASE_URL=https://example.com` — replace it with the app's real UAT URL before running any spec.
 - That `CLAUDE.md` and `README.md` (if scaffolded) are generic starters with `TODO(init)` markers — point out they should be revisited once conventions are confirmed, and note either was skipped if the project already had one.
-- **If the `rag` layer was scaffolded**: that `npm install` will fail until they copy `.npmrc.example` to `.npmrc` (project root, gitignored, never committed) and fill in a personal GitHub PAT with `read:packages` scope — this has to be re-done after every fresh clone, and cannot go in `.env.local` (see the `rag` layer's `ADDITIONS.md` Step 6, and the "RAG setup" section just inserted into `README.md` if one exists). Say this every time the layer is scaffolded, not just once.
-- **If the `rag` layer was skipped** (per Step 3c, "Skip for now" chosen): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`, once a `.npmrc` token is ready).
+- **If the `rag` layer was scaffolded**: whether a real `.npmrc` was already written from a token given in Step 3d (in which case `npm install` should just work — say so), or whether it's still pending (in which case `npm install` will fail until they copy `.npmrc.example` to `.npmrc` and fill in a personal GitHub PAT with `read:packages` scope themselves — this has to be re-done after every fresh clone, and cannot go in `.env.local`; see the `rag` layer's `ADDITIONS.md` Step 6, and the "RAG setup" section just inserted into `README.md` if one exists). Always say which of the two states it's in, every time the layer is scaffolded.
+- **If the `rag` layer was skipped** (per Step 3c, "Skip for now" chosen): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`).
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
 - Whether **each** of framework-rules.md and intent-mapping.md was written or skipped, and why (already present vs. declined) — report on both individually, never just one.
