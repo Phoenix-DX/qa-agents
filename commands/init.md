@@ -240,9 +240,40 @@ Write `.claude/qa-agents.config.json` in the target project:
 
 Every `rules.*` flag is a boolean (or number for the threshold) reflecting what Step 2 confirmed — set to `false`/`null` rather than guessing `true` for anything not actually confirmed as enforced in this project.
 
-## Step 4 — Write the project's own framework-rules doc (optional but recommended)
+## Step 4 — Offer to write the project's own reference docs (optional but recommended)
 
-If the target project doesn't already have its own `.claude/docs/framework-rules.md`, offer to write one: read this plugin's `docs/framework-rules.template.md`, adapt every `{{...}}` placeholder and bracketed TODO using what Step 1-2 gathered, and write the result to `<target>/.claude/docs/framework-rules.md`. Do the same for `docs/intent-mapping.template.md` if the human wants method-mapping guidance too. Skip anything you don't have real evidence for — leave it as an explicit `<TODO: fill in>` rather than inventing plausible-sounding content, matching the same "never invent, flag instead" discipline the other agents follow.
+Two independent docs, each written from this plugin's own template
+(`docs/framework-rules.template.md`, `docs/intent-mapping.template.md`)
+into `<target>/.claude/docs/`. Treat them as two separate offers — don't
+let asking about one silently substitute for asking about the other,
+that's how `intent-mapping.md` has gone missing in practice before:
+
+1. For each of `framework-rules.md` / `intent-mapping.md`, check whether
+   the target project already has it — skip asking about whichever
+   already exists (don't overwrite existing work).
+2. For whichever is still missing, ask via `AskUserQuestion` (multiSelect
+   — both can be picked at once, or neither):
+   ```
+   question: "Write project-specific reference docs from what was just found?"
+   header: "Reference docs"
+   options:
+     - label: "framework-rules.md (Recommended)"
+       description: "Spec/POM discipline, locators, login pattern, naming — read by code-fixer/compliance-checker/pom-author."
+     - label: "intent-mapping.md (Recommended)"
+       description: "Natural-language intent -> POM method mapping — read by pom-discoverer/test-designer."
+   ```
+   (Phrase it in the human's own language, as with every other literal
+   question in this plugin.)
+3. For each one picked, adapt every `{{...}}` placeholder and bracketed
+   TODO using what Step 1-2 gathered, and write the result to
+   `<target>/.claude/docs/<file>`. Skip anything you don't have real
+   evidence for — leave it as an explicit `<TODO: fill in>` rather than
+   inventing plausible-sounding content, matching the same "never invent,
+   flag instead" discipline the other agents follow.
+4. For each one **not** written — whether already present or declined —
+   note which of those two reasons applies in the Step 5 report. Don't
+   just mention framework-rules.md and let intent-mapping.md quietly
+   disappear from the report.
 
 Copy `docs/healing-rules.md` as-is (it's app-agnostic P1/P2 troubleshooting) unless the human's answers changed which P2 rules apply — in that case, adjust its P2 checklist table to match `rules.*` from the config.
 
@@ -259,5 +290,5 @@ Tell the human:
 - **If the `rag` layer was skipped** (per Step 3c, no package name given): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`, once the package name and a `.npmrc` token are ready).
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
-- Whether framework-rules.md / intent-mapping.md were written or skipped, and why.
+- Whether **each** of framework-rules.md and intent-mapping.md was written or skipped, and why (already present vs. declined) — report on both individually, never just one.
 - That they can re-run `/qa-agents:init` any time conventions change.
