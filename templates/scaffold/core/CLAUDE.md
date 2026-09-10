@@ -14,6 +14,7 @@ beyond running `/qa-agents:init` once (already done if this file exists).
 | Raw requirement → test cases → spec, end to end | `/qa-agents:implement-requirement` |
 | Convert an existing TC markdown file → Playwright spec | `/qa-agents:implement-script` |
 | Fix a failing spec, diagnose a flake | `/qa-agents:implement-fix-script` |
+| Index new knowledge into the RAG store (if the `rag` layer was scaffolded) | `/qa-agents:implement-rag` |
 | Re-scan conventions / re-scaffold (run again after conventions change) | `/qa-agents:init` |
 
 Each command orchestrates a set of specialized agents — `dom-inspector`,

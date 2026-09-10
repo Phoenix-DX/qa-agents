@@ -69,7 +69,8 @@ Not every branch above exists in every project — see
 
 See `CLAUDE.md` — this project is set up for the `qa-agents` plugin
 (`/qa-agents:implement-requirement`, `/qa-agents:implement-script`,
-`/qa-agents:implement-fix-script`). Re-run `/qa-agents:init` any time
+`/qa-agents:implement-fix-script`, and `/qa-agents:implement-rag` if the
+`rag` layer was scaffolded). Re-run `/qa-agents:init` any time
 conventions change.
 
 ---
