@@ -228,7 +228,12 @@ Show what you found (or didn't) and ask, in one pass — don't interrogate field
   - A field-count threshold above which a Data Builder pattern should be used (or "not used in this project")
 - Lint command (or "none")
 - RAG: whether the vendored `src/rag/` + `rag:query` script was found, and if so which collection this project's docs live in (or "not indexed yet" / "rag layer not scaffolded — offer it, or skip knowledge-retriever for now")
-- Test header/name format, if the project has a fixed convention (e.g. a doc comment ID + tags above each test)
+- Test header/name format, if the project has a fixed convention (e.g. a doc comment ID + tags above each test). If Step 1 found an existing convention, confirm that one. If it found none (brand-new project, no specs yet), don't default the recommended option to "no fixed format" — this org has a standing convention, so offer it as the recommended choice instead and let the human opt out if this project genuinely wants something else:
+  ```
+  /** ID: TC001 Tags: smoke, interchange, happy-path, admin */
+  test('[TC001] @Smoke @Regression @Admin: Configure a new Interchange with participating localities as LDM Admin', async ({ page }) => { ... });
+  ```
+  i.e. a `/** ID: <TCxxx> Tags: <comma-separated> */` doc comment directly above the test, and the test name itself repeating the ID in brackets + `@Tag` markers + a colon-separated human-readable scenario description.
 
 Use `AskUserQuestion` for anything genuinely ambiguous after Step 1; don't ask about things Step 1 already confirmed with high confidence — just state them and let the human correct if wrong.
 

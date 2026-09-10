@@ -1,7 +1,8 @@
 import { test } from '@playwright/test';
 
 test.describe('Test group', () => {
-  test('seed', async ({ page }) => {
+  /** ID: TC001 Tags: smoke */
+  test('[TC001] @Smoke: seed', async ({ page }) => {
     // generate code here.
   });
 });
