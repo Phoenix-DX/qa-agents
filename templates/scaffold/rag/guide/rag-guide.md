@@ -12,9 +12,9 @@ is intentionally not vendored into this repo**. See
 `.claude/qa-agents.config.json` for this project's `ragCollection` name.
 
 If `npm install` fails to resolve `{{RAG_PACKAGE_NAME}}`, this project's
-`~/.npmrc` setup for the private registry is missing or the token is
-expired — see the root `README.md`'s setup section, not something to
-patch here.
+local `.npmrc` is missing or the token in it is expired — copy
+`.npmrc.example` to `.npmrc` and fill in a valid token (see the root
+`README.md`'s "RAG setup" section), not something to patch here.
 
 ---
 

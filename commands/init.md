@@ -49,7 +49,7 @@ Playwright/POM/TS project, generalized) under this plugin's own
 | `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs) + `.claude/settings.local.json` (pre-enables it, see Step 0b), `.gitignore`, `.env.example` (secrets template — copy to `.env.local`), `.env.uat` (a real, committed placeholder — only `BASE_URL` needs a working value to run anything), `README.md` (generic human-facing setup/run doc, TODO-marked) + `CLAUDE.md` (generic project-instructions starter), `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
 | `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
 | `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
-| `rag` | Installs a **private** RAG CLI (e.g. `@phoenix-dx/rag-cli`) as a normal npm dependency — org policy is to never vendor RAG source into a target repo, so this is the only mode this plugin offers. Adds `.npmrc` (registry routing), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:index`/`rag:query` scripts. Needs the private package's name — see Step 3c |
+| `rag` | Installs a **private** RAG CLI (e.g. `@phoenix-dx/rag-cli`) as a normal npm dependency — org policy is to never vendor RAG source into a target repo, so this is the only mode this plugin offers. Adds `.npmrc.example` (template — the real `.npmrc` holding the token is gitignored, per-project, never committed), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:index`/`rag:query` scripts, and a "RAG setup" section inserted into `README.md` if one exists. Needs the private package's name — see Step 3c |
 
 1. **Detect what's already there** before asking anything: check for
    `playwright.config.ts`, `tsconfig.json`, `.mcp.json`, a POM directory (per
@@ -97,9 +97,8 @@ Playwright/POM/TS project, generalized) under this plugin's own
        entirely — don't scaffold it, don't write a placeholder package
        name, don't guess. Note in the Step 5 report that RAG was skipped
        and how to add it later: re-run `/qa-agents:init` in Custom mode and
-       pick just `rag` once the package name (and eventually the
-       `~/.npmrc` token) are ready. This is a normal, expected outcome, not
-       an error.
+       pick just `rag` once the package name (and eventually a `.npmrc`
+       token) are ready. This is a normal, expected outcome, not an error.
 4. **For each selected layer**, copy every file from this plugin's
    `templates/scaffold/<layer>/` into the equivalent path in the target
    project — including dotfiles like `.mcp.json` (don't let a hidden-file
@@ -237,8 +236,8 @@ Tell the human:
 - That `src/pages/example/login.page.ts` / `src/global.setup.ts` (if scaffolded) are TODO-marked starters needing a real `dom-inspector` + `pom-author` pass, or deletion if the app needs no auth.
 - That `.env.uat` (if scaffolded) has a placeholder `BASE_URL=https://example.com` — replace it with the app's real UAT URL before running any spec.
 - That `CLAUDE.md` and `README.md` (if scaffolded) are generic starters with `TODO(init)` markers — point out they should be revisited once conventions are confirmed, and note either was skipped if the project already had one.
-- **If the `rag` layer was scaffolded**: that `npm install` will fail until they add a personal GitHub PAT (`read:packages` scope) to their **global** `~/.npmrc` — this is a one-time per-machine setup, never written to any file in this project, and cannot go in `.env.local` (see the `rag` layer's `ADDITIONS.md` Step 6 for the exact lines). Say this every time the layer is scaffolded, not just once.
-- **If the `rag` layer was skipped** (per Step 3c, no package name given): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`, once the package name and `~/.npmrc` token are ready).
+- **If the `rag` layer was scaffolded**: that `npm install` will fail until they copy `.npmrc.example` to `.npmrc` (project root, gitignored, never committed) and fill in a personal GitHub PAT with `read:packages` scope — this has to be re-done after every fresh clone, and cannot go in `.env.local` (see the `rag` layer's `ADDITIONS.md` Step 6, and the "RAG setup" section just inserted into `README.md` if one exists). Say this every time the layer is scaffolded, not just once.
+- **If the `rag` layer was skipped** (per Step 3c, no package name given): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`, once the package name and a `.npmrc` token are ready).
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
 - Whether framework-rules.md / intent-mapping.md were written or skipped, and why.

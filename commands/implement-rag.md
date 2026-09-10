@@ -80,7 +80,7 @@ Summarize stdout: files/issues indexed, chunk counts per source, and the final `
 
 On failure, surface the actual error rather than attempting a fix yourself:
 - `JIRA_EMAIL`/`JIRA_API_TOKEN` missing → point to `.env.local` (see `.env.example`'s Atlassian block).
-- `npm error 404`/`403` resolving a `@scope/rag-cli`-shaped package (private RAG variant only) → this is a registry-auth problem, not something to solicit or fix in chat: point to the project's `README.md`/`guide/rag-guide.md` setup section for the required **global** `~/.npmrc` token (can't live in `.env.local` — `npm install` needs it before any dotenv-loaded code runs), and stop.
+- `npm error 404`/`403` resolving a `@scope/rag-cli`-shaped package (private RAG variant only) → this is a registry-auth problem, not something to solicit or fix in chat: point to the project's `README.md` "RAG setup" section / `.npmrc.example` for copying it to `.npmrc` with a valid token (can't live in `.env.local` — `npm install` needs it before any dotenv-loaded code runs), and stop.
 - Confluence "No Confluence space found for key ..." or a 403/404 → the space key in the URL is wrong, or the Atlassian account behind the token lacks read access to that space — don't retry blindly, tell the human which it looks like.
 - `node:sqlite` / experimental flag errors → this project's Node version doesn't support the default `SqliteStore` backend; point to `guide/rag-guide.md`'s Requirements section for the fallback stores, don't patch Node flags yourself.
 - Any other failure → paste the error verbatim and stop; this command indexes, it doesn't debug the RAG implementation.

@@ -1,0 +1,4 @@
+# Copy this to .npmrc (gitignored) at the project root, then fill in your
+# own token. Never commit the real .npmrc — it holds a live credential.
+{{RAG_PACKAGE_SCOPE}}:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=<YOUR_TOKEN>
