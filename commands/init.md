@@ -84,13 +84,22 @@ Playwright/POM/TS project, generalized) under this plugin's own
      of info that can't be invented: the private package's full name (scope
      + name). Ask it as a normal chat question (free text, not
      `AskUserQuestion` — this isn't a small fixed set), suggesting
-     `@phoenix-dx/rag-cli` as the default: "Tên npm package RAG private của
-     bạn là gì? (mặc định: @phoenix-dx/rag-cli)". Derive
-     `{{RAG_PACKAGE_NAME}}` (the full answer) and `{{RAG_PACKAGE_SCOPE}}`
-     (the `@scope` segment before `/`) from it —
+     `@phoenix-dx/rag-cli` as the default, and explicitly offering to skip:
+     "Tên npm package RAG private của bạn là gì? (mặc định:
+     @phoenix-dx/rag-cli — hoặc gõ 'bỏ qua' nếu chưa có token/package sẵn,
+     làm sau cũng được)". Derive `{{RAG_PACKAGE_NAME}}` (the full answer)
+     and `{{RAG_PACKAGE_SCOPE}}` (the `@scope` segment before `/`) from it —
      `templates/scaffold/rag/ADDITIONS.md` substitutes both, same
      mechanism as `{{APP_SLUG}}`. Skip the question if the project already
      has this layer present (per Step 1) — don't re-ask.
+     - **If they skip** (any answer meaning "later" — "bỏ qua", "skip",
+       "sau", empty/no answer): drop `rag` from this run's selected layers
+       entirely — don't scaffold it, don't write a placeholder package
+       name, don't guess. Note in the Step 5 report that RAG was skipped
+       and how to add it later: re-run `/qa-agents:init` in Custom mode and
+       pick just `rag` once the package name (and eventually the
+       `~/.npmrc` token) are ready. This is a normal, expected outcome, not
+       an error.
 4. **For each selected layer**, copy every file from this plugin's
    `templates/scaffold/<layer>/` into the equivalent path in the target
    project — including dotfiles like `.mcp.json` (don't let a hidden-file
@@ -229,6 +238,7 @@ Tell the human:
 - That `.env.uat` (if scaffolded) has a placeholder `BASE_URL=https://example.com` — replace it with the app's real UAT URL before running any spec.
 - That `CLAUDE.md` and `README.md` (if scaffolded) are generic starters with `TODO(init)` markers — point out they should be revisited once conventions are confirmed, and note either was skipped if the project already had one.
 - **If the `rag` layer was scaffolded**: that `npm install` will fail until they add a personal GitHub PAT (`read:packages` scope) to their **global** `~/.npmrc` — this is a one-time per-machine setup, never written to any file in this project, and cannot go in `.env.local` (see the `rag` layer's `ADDITIONS.md` Step 6 for the exact lines). Say this every time the layer is scaffolded, not just once.
+- **If the `rag` layer was skipped** (per Step 3c, no package name given): say so plainly, not as an error — and remind them how to add it later (`/qa-agents:init` again, Custom mode, pick just `rag`, once the package name and `~/.npmrc` token are ready).
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
 - Whether framework-rules.md / intent-mapping.md were written or skipped, and why.
