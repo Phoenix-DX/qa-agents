@@ -63,7 +63,12 @@ Playwright/POM/TS project, generalized) under this plugin's own
    already has a framework — unless literally everything in all four layers
    is already present, in which case skip straight to step 3b and just state
    that instead of asking a vacuous question. Otherwise ask, via
-   `AskUserQuestion` (single-select), how they want to proceed:
+   `AskUserQuestion` (single-select), how they want to proceed. (Every
+   literal question/option string shown anywhere in this file, including
+   3c below, is written in English for the document's own consistency —
+   actually phrase it in whatever language the human has been using in
+   this conversation, don't output the English verbatim to a non-English
+   speaker.):
    - **Default** — scaffold every layer that has anything missing, using
      this plugin's generic templates as-is (no per-layer picking). Best for
      an empty or near-empty project that just wants the whole starter
@@ -88,23 +93,23 @@ Playwright/POM/TS project, generalized) under this plugin's own
      1. First, `AskUserQuestion` (single-select) — a real, visible choice,
         not a text-box escape hatch:
         ```
-        question: "Layer rag cần 1 npm package RAG private để cài — làm luôn hay để sau?"
+        question: "The rag layer needs a private npm package to install — set it up now or later?"
         header: "RAG setup"
         options:
-          - label: "Cấu hình ngay (Recommended)"
-            description: "Nhập tên npm package RAG private ngay bây giờ (vd @phoenix-dx/rag-cli)."
-          - label: "Bỏ qua, làm sau"
-            description: "Chưa có package/token sẵn — chạy /qa-agents:init lại bất cứ lúc nào để thêm layer rag sau."
+          - label: "Set it up now (Recommended)"
+            description: "Enter your private RAG package's name right now (e.g. @phoenix-dx/rag-cli)."
+          - label: "Skip for now"
+            description: "No package/token ready yet — re-run /qa-agents:init any time to add the rag layer later."
         ```
-     2. **If "Cấu hình ngay"** — ask one normal follow-up chat question
+     2. **If "Set it up now"** — ask one normal follow-up chat question
         (free text, not `AskUserQuestion` — a package name isn't a small
-        fixed set), suggesting `@phoenix-dx/rag-cli` as the default: "Tên
-        npm package RAG private của bạn là gì? (mặc định:
+        fixed set), suggesting `@phoenix-dx/rag-cli` as the default: "What's
+        the full name of your private RAG npm package? (default:
         @phoenix-dx/rag-cli)". Derive `{{RAG_PACKAGE_NAME}}` (the full
         answer) and `{{RAG_PACKAGE_SCOPE}}` (the `@scope` segment before
         `/`) from it — `templates/scaffold/rag/ADDITIONS.md` substitutes
         both, same mechanism as `{{APP_SLUG}}`.
-     3. **If "Bỏ qua, làm sau"** — drop `rag` from this run's selected
+     3. **If "Skip for now"** — drop `rag` from this run's selected
         layers entirely right there, no follow-up question: don't
         scaffold it, don't write a placeholder package name, don't guess.
         Note in the Step 5 report that RAG was skipped and how to add it
