@@ -5,13 +5,18 @@ a Jira story, or a data-driven HTML export — into this project's RAG store
 so the `knowledge-retriever` agent and ad-hoc queries (`npm run rag:query`)
 can retrieve it.
 
-Backing implementation: a private, prebuilt `dist/rag-cli.mjs` bundle
-(two-stage retrieve + cross-encoder rerank, local SQLite by default) fetched
-from an internal artifact host via `RAG_ARTIFACT_URL`/`RAG_ARTIFACT_TOKEN` —
-**source is intentionally not vendored into this repo** (see
-`scripts/fetch-rag-cli.mjs`). Usage from here on is identical to the
-open-source variant; only where the CLI binary comes from differs. See
-`.claude/qa-agents.config.json` for this project's `ragCollection` name.
+Backing implementation: `{{RAG_PACKAGE_NAME}}`, a private prebuilt RAG CLI
+(two-stage retrieve + cross-encoder rerank, local SQLite by default)
+installed as a normal npm dependency from an internal registry — **source
+is intentionally not vendored into this repo**. Usage from here on is
+identical to the open-source variant; only where the CLI binary comes
+from differs. See `.claude/qa-agents.config.json` for this project's
+`ragCollection` name.
+
+If `npm install` fails to resolve `{{RAG_PACKAGE_NAME}}`, this project's
+`~/.npmrc` setup for the private registry is missing or the token is
+expired — see the root `README.md`'s setup section, not something to
+patch here.
 
 ---
 

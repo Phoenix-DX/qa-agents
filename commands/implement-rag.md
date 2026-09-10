@@ -13,8 +13,8 @@ description: Index the project's docs-drop folder (or a Jira issue/search URL, o
 `Grep` `package.json` for a `"rag:index"` script — that alone is enough,
 since both the open-source and private (hidden-architecture) variants of
 the `rag` layer add it. Don't gate on `src/rag/index.ts` existing: the
-private variant deliberately has no local RAG source, only
-`scripts/fetch-rag-cli.mjs`.
+private variant deliberately has no local RAG source, only an installed
+`@scope/rag-cli`-shaped npm dependency.
 
 - **Missing** → this project hasn't scaffolded the RAG layer yet. Tell the human to run `/qa-agents:init` and opt into the `rag` layer, then stop — do not try to invent or install anything else.
 - **Present** → continue.
@@ -78,8 +78,7 @@ Summarize stdout: files/issues indexed, chunk counts per source, and the final `
 
 On failure, surface the actual error rather than attempting a fix yourself:
 - `JIRA_EMAIL`/`JIRA_API_TOKEN` missing → point to `.env.local` (see `.env.example`'s Atlassian block).
-- `RAG_ARTIFACT_URL`/`RAG_ARTIFACT_TOKEN is not set` (private RAG variant only, `scripts/fetch-rag-cli.mjs` present) → these aren't something to solicit from the human in chat the way Jira/Confluence creds are — point them to whoever maintains this project's private RAG artifact host and stop; don't invent a URL or token.
-- "Failed to fetch the RAG CLI bundle" (401/403/404) → the token is invalid/expired or lacks access, or the URL is wrong — same as above, this is an artifact-host problem to take to its maintainer, not something to retry or work around.
+- `npm error 404`/`403` resolving a `@scope/rag-cli`-shaped package (private RAG variant only) → this is a registry-auth problem, not something to solicit or fix in chat: point to the project's `README.md`/`guide/rag-guide.md` setup section for the required **global** `~/.npmrc` token (can't live in `.env.local` — `npm install` needs it before any dotenv-loaded code runs), and stop.
 - Confluence "No Confluence space found for key ..." or a 403/404 → the space key in the URL is wrong, or the Atlassian account behind the token lacks read access to that space — don't retry blindly, tell the human which it looks like.
 - `node:sqlite` / experimental flag errors → this project's Node version doesn't support the default `SqliteStore` backend; point to `guide/rag-guide.md`'s Requirements section for the fallback stores, don't patch Node flags yourself.
 - Any other failure → paste the error verbatim and stop; this command indexes, it doesn't debug the RAG implementation.

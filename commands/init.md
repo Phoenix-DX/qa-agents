@@ -54,10 +54,9 @@ Playwright/POM/TS project, generalized) under this plugin's own
 1. **Detect what's already there** before asking anything: check for
    `playwright.config.ts`, `tsconfig.json`, `.mcp.json`, a POM directory (per
    Step 1's Glob), `allure-playwright` in `package.json`, an `src/api/` or
-   `k6/` directory, and `src/rag/` or `scripts/fetch-rag-cli.mjs` or a
-   `rag:query` script in `package.json` (either the open or private RAG
-   variant counts as this layer already being present — not a global
-   `rag-cli` install). Build
+   `k6/` directory, and `src/rag/` or a `rag:query` script in `package.json`
+   (either the open or private RAG variant counts as this layer already
+   being present — not a global `rag-cli` install). Build
    a per-layer present/missing picture — don't guess, check the actual
    filesystem.
 2. **Always surface this to the human**, whether the project is empty or
@@ -78,9 +77,9 @@ Playwright/POM/TS project, generalized) under this plugin's own
    - **3b. If Custom** — ask a second `AskUserQuestion` (multiSelect),
      showing what's already present vs. missing per layer, and let them pick
      zero or more layers to scaffold now.
-   - **3c. If `rag` ends up selected** (Default or Custom) and neither
-     `src/rag/` nor `scripts/fetch-rag-cli.mjs` already exists in the
-     target project: in **Default** mode, just use the open/vendored
+   - **3c. If `rag` ends up selected** (Default or Custom) and it wasn't
+     already present per Step 1's detection: in **Default** mode, just use
+     the open/vendored
      variant automatically — no extra question, that's the safe common
      case. In **Custom** mode only, ask one more `AskUserQuestion`
      (single-select):
@@ -91,8 +90,16 @@ Playwright/POM/TS project, generalized) under this plugin's own
        - label: "Open source (mặc định)"
          description: "Vendor src/rag/ + scripts/rag-cli.ts thẳng vào repo — ai đọc repo cũng thấy được cách RAG được cài."
        - label: "Private (hidden)"
-         description: "Không vendor source — chỉ ghi 1 script tải sẵn dist/rag-cli.mjs từ 1 host nội bộ có auth (RAG_ARTIFACT_URL/TOKEN). Cần đã có sẵn host đó, xem templates/scaffold/rag-private/ADDITIONS.md."
+         description: "Cài 1 package npm private (vd @phoenix-dx/rag-cli) làm dependency thay vì vendor source — không ai đọc repo thấy được code RAG. Cần package đó đã tồn tại và bạn có quyền đọc registry."
      ```
+     If they pick **Private**, ask one normal follow-up chat question (free
+     text, not `AskUserQuestion`) for the package's full name, suggesting
+     `@phoenix-dx/rag-cli` as the default: "Tên npm package RAG private của
+     bạn là gì? (mặc định: @phoenix-dx/rag-cli)". Derive `{{RAG_PACKAGE_NAME}}`
+     (the full answer) and `{{RAG_PACKAGE_SCOPE}}` (the `@scope` segment
+     before `/`) from it — `templates/scaffold/rag-private/ADDITIONS.md`
+     substitutes both, same mechanism as `{{APP_SLUG}}`.
+
      Copy from `templates/scaffold/rag-private/` instead of
      `templates/scaffold/rag/` if they pick **Private** — everything else
      in this flow (Step 4 onward) treats it exactly like the `rag` layer,
