@@ -3,7 +3,7 @@
   "version": "0.4.4",
   "description": "Multi-agent pipeline for Playwright/POM UI test automation: requirement -> test case -> spec, plus heal/compliance/quality loops. Run /qa-agents:init once per target project before using the other commands.",
   "author": {
-    "name": "SIMON"
+    "name": "Phoenix-DX"
   },
   "keywords": ["playwright", "qa", "testing", "pom", "test-automation"]
 }

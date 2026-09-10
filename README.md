@@ -33,7 +33,7 @@ templates/scaffold/             starter framework skeleton /qa-agents:init can
 ## Install into a project
 
 ```
-/plugin marketplace add simonpham268/qa-agents
+/plugin marketplace add Phoenix-DX/qa-agents
 /plugin install qa-agents
 ```
 

@@ -2,7 +2,7 @@
   "name": "qa-agents-marketplace",
   "description": "Marketplace hosting the qa-agents plugin — a Playwright/POM UI test-automation agent pipeline.",
   "owner": {
-    "name": "SIMON"
+    "name": "Phoenix-DX"
   },
   "plugins": [
     {
