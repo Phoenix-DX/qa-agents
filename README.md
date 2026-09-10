@@ -67,11 +67,12 @@ lint, a `.mcp.json` wiring up the `playwright-test` MCP server `dom-inspector`
 needs, a generic `CLAUDE.md` starter, base POM class, fixtures, a TODO-marked
 auth starter), `allure`
 (reporting), `api-k6` (a generic REST API layer + k6 perf tests against the
-public Petstore demo), and `rag` (a real vendored two-stage RAG
-implementation — `src/rag/` embedder/reranker/vector-stores, a
-`scripts/rag-cli.ts` index/query CLI incl. Jira ingestion, and a `docs/`
-docs-drop folder — no external tool install required, see below). It always
-asks first — **Default** (scaffold every layer with anything missing) or
+public Petstore demo), and `rag` (installs a private, prebuilt RAG CLI —
+e.g. `@phoenix-dx/rag-cli` — as a normal npm dependency from an internal
+registry, plus a `docs/` docs-drop folder; org policy is to never vendor
+RAG source into a target repo, so this is the only mode offered, see
+below). It always asks first — **Default** (scaffold every layer with
+anything missing) or
 **Custom** (pick specific layers) — shows what's already present vs.
 missing per layer either way, and never overwrites a file that's already
 there.

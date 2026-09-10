@@ -49,16 +49,16 @@ Playwright/POM/TS project, generalized) under this plugin's own
 | `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs) + `.claude/settings.local.json` (pre-enables it, see Step 0b), `.gitignore`, `.env.example` (secrets template — copy to `.env.local`), `.env.uat` (a real, committed placeholder — only `BASE_URL` needs a working value to run anything), `README.md` (generic human-facing setup/run doc, TODO-marked) + `CLAUDE.md` (generic project-instructions starter), `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
 | `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
 | `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
-| `rag` | `src/rag/` (embedder, cross-encoder reranker, SQLite/in-memory/Qdrant vector stores, pipeline, evaluator), `scripts/rag-cli.ts` (index/query CLI, incl. Jira/Confluence ingestion), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:build`/`rag:index`/`rag:query` scripts — a real vendored implementation, no external tool install required (see Step 1.6 below and each layer's own `ADDITIONS.md`). Has a **private** mode too — see Step 3c |
+| `rag` | Installs a **private** RAG CLI (e.g. `@phoenix-dx/rag-cli`) as a normal npm dependency — org policy is to never vendor RAG source into a target repo, so this is the only mode this plugin offers. Adds `.npmrc` (registry routing), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:index`/`rag:query` scripts. Needs the private package's name — see Step 3c |
 
 1. **Detect what's already there** before asking anything: check for
    `playwright.config.ts`, `tsconfig.json`, `.mcp.json`, a POM directory (per
    Step 1's Glob), `allure-playwright` in `package.json`, an `src/api/` or
    `k6/` directory, and `src/rag/` or a `rag:query` script in `package.json`
-   (either the open or private RAG variant counts as this layer already
-   being present — not a global `rag-cli` install). Build
-   a per-layer present/missing picture — don't guess, check the actual
-   filesystem.
+   (a pre-existing `src/rag/` means a project scaffolded before this plugin
+   went private-only — leave it as-is, don't force-migrate it; just treat
+   the layer as already present). Build a per-layer present/missing
+   picture — don't guess, check the actual filesystem.
 2. **Always surface this to the human**, whether the project is empty or
    already has a framework — unless literally everything in all four layers
    is already present, in which case skip straight to step 3b and just state
@@ -78,34 +78,19 @@ Playwright/POM/TS project, generalized) under this plugin's own
      showing what's already present vs. missing per layer, and let them pick
      zero or more layers to scaffold now.
    - **3c. If `rag` ends up selected** (Default or Custom) and it wasn't
-     already present per Step 1's detection: in **Default** mode, just use
-     the open/vendored
-     variant automatically — no extra question, that's the safe common
-     case. In **Custom** mode only, ask one more `AskUserQuestion`
-     (single-select):
-     ```
-     question: "RAG layer: open source hay private (ẩn kiến trúc)?"
-     header: "RAG mode"
-     options:
-       - label: "Open source (mặc định)"
-         description: "Vendor src/rag/ + scripts/rag-cli.ts thẳng vào repo — ai đọc repo cũng thấy được cách RAG được cài."
-       - label: "Private (hidden)"
-         description: "Cài 1 package npm private (vd @phoenix-dx/rag-cli) làm dependency thay vì vendor source — không ai đọc repo thấy được code RAG. Cần package đó đã tồn tại và bạn có quyền đọc registry."
-     ```
-     If they pick **Private**, ask one normal follow-up chat question (free
-     text, not `AskUserQuestion`) for the package's full name, suggesting
+     already present per Step 1's detection: there's no open-vs-private
+     question anymore — this plugin only scaffolds the private variant,
+     full stop, in both Default and Custom mode. It still needs one piece
+     of info that can't be invented: the private package's full name (scope
+     + name). Ask it as a normal chat question (free text, not
+     `AskUserQuestion` — this isn't a small fixed set), suggesting
      `@phoenix-dx/rag-cli` as the default: "Tên npm package RAG private của
-     bạn là gì? (mặc định: @phoenix-dx/rag-cli)". Derive `{{RAG_PACKAGE_NAME}}`
-     (the full answer) and `{{RAG_PACKAGE_SCOPE}}` (the `@scope` segment
-     before `/`) from it — `templates/scaffold/rag-private/ADDITIONS.md`
-     substitutes both, same mechanism as `{{APP_SLUG}}`.
-
-     Copy from `templates/scaffold/rag-private/` instead of
-     `templates/scaffold/rag/` if they pick **Private** — everything else
-     in this flow (Step 4 onward) treats it exactly like the `rag` layer,
-     just sourced from the other template folder. If the project already
-     has one variant scaffolded, don't ask — just reuse whichever is
-     already there.
+     bạn là gì? (mặc định: @phoenix-dx/rag-cli)". Derive
+     `{{RAG_PACKAGE_NAME}}` (the full answer) and `{{RAG_PACKAGE_SCOPE}}`
+     (the `@scope` segment before `/`) from it —
+     `templates/scaffold/rag/ADDITIONS.md` substitutes both, same
+     mechanism as `{{APP_SLUG}}`. Skip the question if the project already
+     has this layer present (per Step 1) — don't re-ask.
 4. **For each selected layer**, copy every file from this plugin's
    `templates/scaffold/<layer>/` into the equivalent path in the target
    project — including dotfiles like `.mcp.json` (don't let a hidden-file

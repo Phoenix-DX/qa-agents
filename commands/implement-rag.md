@@ -1,5 +1,5 @@
 ---
-description: Index the project's docs-drop folder (or a Jira issue/search URL, or a Confluence page/space URL) into the vendored RAG store via its own `npm run rag:index` script — wraps the manual terminal step so it runs directly from Claude Code (requires /qa-agents:init to have scaffolded the `rag` layer).
+description: Index the project's docs-drop folder (or a Jira issue/search URL, or a Confluence page/space URL) into the RAG store via its own `npm run rag:index` script — wraps the manual terminal step so it runs directly from Claude Code (requires /qa-agents:init to have scaffolded the `rag` layer).
 ---
 
 # Index RAG Store
@@ -11,10 +11,12 @@ description: Index the project's docs-drop folder (or a Jira issue/search URL, o
 ## Step 1 — Confirm the `rag` layer is scaffolded
 
 `Grep` `package.json` for a `"rag:index"` script — that alone is enough,
-since both the open-source and private (hidden-architecture) variants of
-the `rag` layer add it. Don't gate on `src/rag/index.ts` existing: the
-private variant deliberately has no local RAG source, only an installed
-`@scope/rag-cli`-shaped npm dependency.
+since the `rag` layer always adds it. Don't gate on `src/rag/index.ts`
+existing: the private variant (the only one this plugin scaffolds now)
+deliberately has no local RAG source, only an installed
+`@scope/rag-cli`-shaped npm dependency. A pre-existing project scaffolded
+before this plugin went private-only may still have `src/rag/` — that's
+fine too, `rag:index` being present is what matters.
 
 - **Missing** → this project hasn't scaffolded the RAG layer yet. Tell the human to run `/qa-agents:init` and opt into the `rag` layer, then stop — do not try to invent or install anything else.
 - **Present** → continue.
