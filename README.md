@@ -21,6 +21,7 @@ commands/
   implement-requirement.md
   implement-script.md
   implement-fix-script.md
+  implement-rag.md
 docs/
   framework-rules.template.md   filled in per-project by /qa-agents:init
   intent-mapping.template.md    filled in per-project by /qa-agents:init
@@ -77,12 +78,32 @@ anything missing) or
 missing per layer either way, and never overwrites a file that's already
 there.
 
+### Using the `rag` layer
+
+Once scaffolded, index docs from inside Claude Code — don't call `npm run
+rag:index` directly:
+
+```
+/qa-agents:implement-rag    index docs/ (or a Jira/Confluence URL) into the RAG store
+```
+
+Querying isn't a separate command — `knowledge-retriever` calls it
+automatically during `/qa-agents:implement-requirement` whenever a
+requirement has a gap indexed docs might fill.
+
+`@phoenix-dx/rag-cli` is a private package published to GitHub Packages, so
+`npm install` needs a registry token to resolve it before any of the above
+will work. See the "RAG setup" section `/qa-agents:init` inserts into the
+scaffolded project's own `README.md` for how to create that token and
+where it goes (`.npmrc`).
+
 ## Then use
 
 ```
 /qa-agents:implement-requirement    raw requirement -> approved TC -> spec
 /qa-agents:implement-script         existing TC markdown -> spec
 /qa-agents:implement-fix-script     heal a failing spec
+/qa-agents:implement-rag            index docs/ (or a Jira/Confluence URL) into the RAG store
 ```
 
 ## Design notes

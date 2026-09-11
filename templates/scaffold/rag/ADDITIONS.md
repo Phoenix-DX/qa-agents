@@ -130,10 +130,19 @@ redo it. Otherwise, tell the human, plainly, once:
 ## 7. README.md — insert a "RAG setup" section, if README.md exists
 
 If this project already has a `README.md` (written by the `core` layer,
-or otherwise), insert the section below right after its first `##`
-section (e.g. after "Setup"/"Quick start") — don't touch anything else in
-the file. If there's no `README.md` yet, skip this; nothing to insert
-into, and this layer doesn't create one on its own.
+or otherwise), insert the section below immediately **before** whichever
+section first shows or instructs running `npm install` (commonly named
+"Setup"/"Quick start"/"Getting started") — never after it. The token has
+to exist before `npm install` can even resolve `{{RAG_PACKAGE_NAME}}`, so
+this section must read earlier in the doc than any `npm install`
+instruction, full stop. In this plugin's own `core` layer template,
+that's right after "## Install the `qa-agents` Claude Code plugin" and
+before "## Quick start" — use that exact slot when the README came from
+this plugin's scaffold. If the README predates this plugin and has a
+differently-named section that runs `npm install` (e.g. "Setup"), insert
+right before that section instead. Don't touch anything else in the
+file. If there's no `README.md` yet, skip this; nothing to insert into,
+and this layer doesn't create one on its own.
 
 Substitute `{{RAG_PACKAGE_NAME}}` and `{{RAG_PACKAGE_SCOPE}}` before
 inserting:
