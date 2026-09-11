@@ -58,6 +58,21 @@ layout.
 Re-run `/qa-agents:init` whenever the target project's conventions change
 materially.
 
+## Updating the plugin
+
+```
+/plugin marketplace update qa-agents-marketplace   # refresh the marketplace catalog
+/plugin update qa-agents                           # update the installed plugin to the version the catalog now lists
+```
+
+Run both — `marketplace update` alone only refreshes the catalog, it
+doesn't touch what's actually installed; `plugin update` alone won't find
+anything new until the catalog has been refreshed first. Then run
+`/reload-plugins`, or start a new Claude Code session, for the update to
+actually take effect. If `plugin.json`'s version wasn't bumped in the
+change you're expecting, `/plugin update` will see nothing new and no-op —
+that's expected, not a bug.
+
 ## Scaffolding a starter framework
 
 If the target project has no Playwright/POM framework yet (or is missing
