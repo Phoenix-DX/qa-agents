@@ -88,12 +88,38 @@ kebab-case + `.page.ts` if the project uses something else).
 
 ## 4. Login Patterns
 
-<!-- /qa-agents:init: describe how THIS project actually authenticates test
-     sessions — reused storage state? Fresh login per test? Multiple roles?
-     Do not copy this plugin's own example verbatim; confirm against the
-     project's actual global setup file (if any). -->
+<!-- /qa-agents:init: the default below IS this org's pattern — authenticate
+     once in the global setup project, reuse the storage state everywhere.
+     Keep it; only fill in the project-specific values ({{...}}) from the
+     project's real global setup file, and only rewrite the pattern itself
+     if this project demonstrably does something else (say so explicitly
+     in that case). -->
 
-{{TODO: fill in from the project's actual auth setup}}
+**Authentication happens in `{{GLOBAL_SETUP_FILE}}` (the `setup` project),
+never inside a spec.** The session it produces is reused by every test
+through `storageState`.
+
+| Piece | This project |
+|---|---|
+| Setup file | `{{GLOBAL_SETUP_FILE}}` — e.g. `src/global.setup.ts`, run as the `setup` project via `testMatch` |
+| Storage state file | `{{AUTH_FILE}}` — e.g. `src/auth/{{APP_SLUG}}.json`, written by `page.context().storageState(...)` |
+| Wiring | `playwright.config.ts`: `use.storageState = AUTH_FILE`, and every browser project declares `dependencies: ['setup']` |
+| Credentials | `{{env var names}}` — per-environment (e.g. `APP_ADMIN_USERNAME_UAT`), read via `requireEnv(...)`, never hardcoded |
+| Roles | {{TODO: list each additional role and its own storageState file, or "single role"}} |
+
+Rules that follow from this:
+
+- A spec **never** instantiates the login POM, fills credentials, or calls
+  a `login(...)` method. It starts already authenticated.
+- A spec that genuinely needs no session (or a different role) says so via
+  `test.use({ storageState: ... })` — the documented per-role file, or
+  `{ cookies: [], origins: [] }` for anonymous — rather than logging in by
+  hand.
+- The **only** exception is a spec whose subject *is* authentication
+  (invalid credentials, lockout, logout). Those legitimately drive the
+  login POM directly, and run anonymous via `test.use`.
+- Adding a new role means a new setup step + its own storage state file
+  here, not a login call in a spec.
 
 ---
 

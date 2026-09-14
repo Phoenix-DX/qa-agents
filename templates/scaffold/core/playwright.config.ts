@@ -5,8 +5,10 @@ import fs from 'fs';
 import { requireEnv } from './src/utils/env';
 
 // TODO(init): if this app needs an authenticated session, point this at the
-// storageState file written by src/global.setup.ts. If specs run unauthenticated,
-// delete AUTH_FILE, the `storageState` line below, and the 'setup' project.
+// storageState file written by src/global.setup.ts — the project's single
+// login. Specs inherit it and never authenticate themselves. Only if this app
+// has no authenticated area at all: delete AUTH_FILE, the `storageState` line
+// below, and the 'setup' project.
 const AUTH_FILE = 'src/auth/{{APP_SLUG}}.json';
 
 // Load environment variables dynamically based on pipeline parameter

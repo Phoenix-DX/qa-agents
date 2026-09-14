@@ -111,7 +111,7 @@ only for rules whose flag is actually set in
 |---|---|---|
 | P2.1 | Test header/name format | `testHeaderFormat` set |
 | P2.2 | Import path correct (fixture import if the spec uses one, else the plain test-runner import) | always |
-| P2.3 | Login/auth pattern matches the documented pattern | `rules.enforceLoginPattern` |
+| P2.3 | Auth via the global setup project's `storageState` — no login performed inside the spec (except a spec testing auth itself) | `rules.enforceLoginPattern` |
 | P2.4 | No direct low-level interaction calls in spec — only POM methods | `rules.noPageDotInSpec` |
 | P2.5 | No step-wrapper calls in spec — POM methods wrap internally | `rules.mandatoryTestStep` |
 | P2.6 | POM locators `readonly` in constructor, NOT inside methods | `rules.readonlyLocators` |

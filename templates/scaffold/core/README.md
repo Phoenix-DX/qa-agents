@@ -109,8 +109,9 @@ npm run allure                    # generate + open Allure
 
 TODO(init): not every branch above exists in every project — `src/api/`
 + `k6/` (perf tests) only exist if the `api-k6` layer was scaffolded;
-`docs/`, `guide/rag-guide.md`, `.rag/store.sqlite`, and `.npmrc` only
-exist if the `rag` layer was scaffolded. See
+`docs/` and `guide/rag-guide.md` always exist (the `rag` layer is
+mandatory), while `.npmrc` only exists once someone added a registry
+token here and `.rag/store.sqlite` only after a first index run. See
 `.claude/qa-agents.config.json` for what's real here.
 
 ---

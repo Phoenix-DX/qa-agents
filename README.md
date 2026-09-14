@@ -78,20 +78,22 @@ that's expected, not a bug.
 If the target project has no Playwright/POM framework yet (or is missing
 pieces of one), `/qa-agents:init` offers — before it scans anything — to copy
 a generic starter skeleton from `templates/scaffold/` into the project, in
-four independently-selectable layers: `core` (Playwright config, TS config,
+four layers — three independently-selectable plus a mandatory `rag`:
+`core` (Playwright config, TS config,
 lint, a `.mcp.json` wiring up the `playwright-test` MCP server `dom-inspector`
 needs, a generic `CLAUDE.md` starter, base POM class, fixtures, a TODO-marked
 auth starter), `allure`
 (reporting), `api-k6` (a generic REST API layer + k6 perf tests against the
-public Petstore demo), and `rag` (installs a private, prebuilt RAG CLI —
-e.g. `@phoenix-dx/rag-cli` — as a normal npm dependency from an internal
+public Petstore demo), and `rag` — always scaffolded, never a
+checkbox (installs a private, prebuilt RAG CLI —
+e.g. `@phoenix-dx/rag-cli` — as an optional npm dependency from an internal
 registry, plus a `docs/` docs-drop folder; org policy is to never vendor
 RAG source into a target repo, so this is the only mode offered, see
 below). It always asks first — **Default** (scaffold every layer with
 anything missing) or
-**Custom** (pick specific layers) — shows what's already present vs.
-missing per layer either way, and never overwrites a file that's already
-there.
+**Custom** (pick specific layers, `rag` aside — that one is always
+included) — shows what's already present vs. missing per layer either
+way, and never overwrites a file that's already there.
 
 ### Using the `rag` layer
 
@@ -106,11 +108,16 @@ Querying isn't a separate command — `knowledge-retriever` calls it
 automatically during `/qa-agents:implement-requirement` whenever a
 requirement has a gap indexed docs might fill.
 
-`@phoenix-dx/rag-cli` is a private package published to GitHub Packages, so
-`npm install` needs a registry token to resolve it before any of the above
-will work. See the "RAG setup" section `/qa-agents:init` inserts into the
-scaffolded project's own `README.md` for how to create that token and
-where it goes (`.npmrc`).
+`@phoenix-dx/rag-cli` is a private package published to GitHub Packages,
+scaffolded into `optionalDependencies` on purpose: `npm install` succeeds
+with no registry token at all — npm just skips the package — so a teammate
+who never touches RAG is never blocked. Only `npm run rag:index`/`rag:query`
+(and therefore `knowledge-retriever`) need auth. `/qa-agents:init` asks once
+whether to paste a token now or add it later, and either way explains where
+it goes: preferably two lines in `~/.npmrc` (once per machine, survives
+every fresh clone), or per-clone in the project's gitignored `.npmrc`. See
+the "RAG setup" section `/qa-agents:init` inserts into the scaffolded
+project's own `README.md`.
 
 ## Then use
 

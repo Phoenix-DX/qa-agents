@@ -7,14 +7,16 @@ can retrieve it.
 
 Backing implementation: `{{RAG_PACKAGE_NAME}}`, a private prebuilt RAG CLI
 (two-stage retrieve + cross-encoder rerank, local SQLite by default)
-installed as a normal npm dependency from an internal registry — **source
-is intentionally not vendored into this repo**. See
+installed as an **optional** npm dependency from an internal registry —
+**source is intentionally not vendored into this repo**. See
 `.claude/qa-agents.config.json` for this project's `ragCollection` name.
 
-If `npm install` fails to resolve `{{RAG_PACKAGE_NAME}}`, this project's
-local `.npmrc` is missing or the token in it is expired — copy
-`.npmrc.example` to `.npmrc` and fill in a valid token (see the root
-`README.md`'s "RAG setup" section), not something to patch here.
+Because it's optional, `npm install` succeeds without a registry token and
+simply skips the package — so `rag-cli: command not found` (or a 404/403
+resolving it) means no valid token is configured yet, not a broken install.
+Add one — two lines in `~/.npmrc` once per machine, or per-clone by copying
+`.npmrc.example` to `.npmrc` — then re-run `npm install`. See the root
+`README.md`'s "RAG setup" section; not something to patch here.
 
 ---
 

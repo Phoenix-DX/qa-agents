@@ -53,16 +53,18 @@ src/
 ├── fixtures/               custom.fixture.ts — test.extend wiring, if applicable
 ├── utils/env.ts            requireEnv() helper
 ├── auth/                   saved storageState (gitignored) — written by global.setup.ts
-├── global.setup.ts         TODO-marked auth starter — replace with the app's
-│                           real login flow, or delete if the app needs no auth
+├── global.setup.ts         the project's single login — TODO-marked starter,
+│                           replace with the app's real login flow. Specs
+│                           inherit the session via storageState and never
+│                           log in themselves
 └── api/                    REST API layer + models/services — only if the
                             api-k6 layer was scaffolded
 
 k6/                          perf tests (smoke/load/stress) — only if the
                               api-k6 layer was scaffolded
 docs/, guide/rag-guide.md,
-.npmrc.example                RAG ingestion (private npm package, no vendored
-                              source) — only if the rag layer was scaffolded
+.npmrc.example                RAG ingestion (private npm package, installed
+                              as an optional dependency, no vendored source)
 ```
 
 `casesDir` in `.claude/qa-agents.config.json` may point elsewhere if the
