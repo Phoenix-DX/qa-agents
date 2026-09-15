@@ -64,7 +64,8 @@ actually take effect.
 ## Quick start
 
 ```bash
-# 1. Install
+# 1. Install  (/qa-agents:init already ran `npm install` for you — this is
+#              for a fresh clone, or after someone changes dependencies)
 npm install
 npm run install:browsers          # one-time per machine
 

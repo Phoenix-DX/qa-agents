@@ -186,8 +186,11 @@ entered):
    authenticate themselves (`rules.enforceLoginPattern`, framework-rules.md
    §4). Deleting them applies only to an app with no authenticated area.
 6. Whatever layers were scaffolded (or none, if skipped), continue into
-   Step 1 below — the scan there will now pick up whatever structure just got
-   written (or the project's pre-existing one) as "existing conventions."
+   Step 0b and then Step 1 — the scan there will pick up whatever structure
+   just got written (or the project's pre-existing one) as "existing
+   conventions." Dependencies are installed at the very end, in Step 4b,
+   so the human isn't left waiting on a multi-minute install before the
+   Step 2 questions.
 
 ## Step 0b — Default every `.mcp.json` server to enabled
 
@@ -234,7 +237,7 @@ never grounds for turning it into a question:
 5. Look for a lint command in `package.json` scripts (e.g. `lint`, `lint:file`).
 6. Check RAG setup — the `knowledge-retriever` agent expects a per-project `npm run rag:query` script backed by `@phoenix-dx/rag-cli` (see Step 0's mandatory `rag` layer), not a global tool install:
    - `Grep` for a `rag:query` script in `package.json` (a pre-existing `src/rag/index.ts` also counts — that's a project scaffolded before this plugin). If neither is there, Step 0's `rag` layer should have just added it — re-check rather than telling the human to install anything externally.
-   - If the script is there but `@phoenix-dx/rag-cli` isn't installed (no registry token yet — it's an optional dependency, so a token-less `npm install` skips it), that's expected and not an error: note RAG as "scaffolded, token pending" and move on.
+   - Don't read `node_modules/` here to decide anything: dependencies aren't installed until Step 4b, so "not in `node_modules`" at this point means nothing. Whether `@phoenix-dx/rag-cli` actually resolved is a Step 4b outcome, reported there.
    - If it IS present, `Glob` for `.rag/store.sqlite` in the project root to see if anything's been indexed yet, and if so, try to determine which collection name(s) it holds (ask the human if you can't tell from a quick `npm run rag:query --` test).
    - Only note a custom `ragQueryCommand` override if the project demonstrably uses something other than its own `npm run rag:query` script (rare) — don't invent one.
 7. Check for a project instructions file (`CLAUDE.md` or similar) that already documents test-case format rules — if found, don't duplicate its content into the config; just note its path so `test-case-writer` reads it directly.
@@ -253,7 +256,7 @@ interrogate field by field when you already have solid evidence:
 - Test-case source directory — state the default (`src/cases/`, existing or just scaffolded) or whatever Step 1 found instead; only ask if genuinely ambiguous (e.g. TCs demonstrably live somewhere else already, or aren't tracked as files at all)
 - Fixture import path, if specs use one (e.g. for an API client)
 - Lint command (or "none")
-- RAG: whether the `rag:query` script + an installed `@phoenix-dx/rag-cli` were found, and if so which collection this project's docs live in (or "not indexed yet" / "scaffolded, registry token pending — knowledge-retriever stays unavailable until then")
+- RAG: whether the `rag:query` script is wired up, and if anything is already indexed, which collection this project's docs live in (or "not indexed yet"). Whether `@phoenix-dx/rag-cli` itself resolves is unknown until Step 4b installs — don't state it here.
 
 **B. Framework conventions — org standards. Apply them, state them, never
 ask.** These are not per-project preferences; this org has already decided
@@ -342,6 +345,38 @@ plausible-sounding content, matching the "never invent, flag instead"
 discipline the other agents follow — that's the mechanism for handling
 missing information here, not skipping the file entirely.
 
+## Step 4b — Install dependencies (the last action before the report)
+
+Everything the human had to answer is done by now, so this is where the
+waiting goes. Run it after Step 4's docs are written, immediately before
+the Step 5 report.
+
+1. Skip the whole step, and say so in Step 5, if the target project has no
+   `package.json` at all (nothing to install).
+2. Pick the command from the lockfile actually present in the project root —
+   don't assume npm:
+   - `pnpm-lock.yaml` → `pnpm install`
+   - `yarn.lock` → `yarn install`
+   - `bun.lockb` / `bun.lock` → `bun install`
+   - otherwise (or `package-lock.json`) → `npm install`
+3. Run it in the project root with a generous timeout (it can take minutes
+   on a fresh scaffold). Don't paste the raw output into chat — keep it
+   quiet and fold a one-line summary into the Step 5 report.
+4. **A failure here is reported, never fixed.** Don't retry with different
+   flags, don't edit `package.json` to make it resolve, don't delete
+   `node_modules`/the lockfile. Capture the error and go straight to Step 5
+   — everything before this point (config + docs) already succeeded and
+   still stands. A missing RAG registry token is *not* a failure mode here:
+   `@phoenix-dx/rag-cli` is an optional dependency, so it's skipped
+   silently (see Step 3c).
+5. Never run anything beyond the install itself — no browser download
+   (`npx playwright install` / the project's `install:browsers` script), no
+   build, no test run.
+6. This is also where the RAG install state becomes knowable: after the
+   install, check whether `@phoenix-dx/rag-cli` landed in `node_modules`.
+   Not there + no token configured = the expected "scaffolded, token
+   pending" state — report it as such in Step 5, not as an error.
+
 ## Step 5 — Report
 
 Tell the human:
@@ -353,6 +388,7 @@ Tell the human:
 - That `CLAUDE.md` and `README.md` (if scaffolded) are generic starters with `TODO(init)` markers — point out they should be revisited once conventions are confirmed, and note either was skipped if the project already had one.
 - **If the `rag` layer was scaffolded**: say plainly that `npm install` is not blocked either way — `@phoenix-dx/rag-cli` is an optional dependency, so npm skips it when there's no registry token and installs everything else normally. Then say which of the two token states this project is in: either a real `.npmrc` was written from a token they pasted during Step 3c (RAG works after `npm install`), or no token yet (everything works except `npm run rag:index` / `rag:query` and `knowledge-retriever`, until they add a token — `.npmrc.example` is already sitting at the project root as the template for exactly this, so say it's there: either lift its two lines into `~/.npmrc` once per machine, or copy it to `.npmrc` per clone — and re-run `npm install`, since the token-less install skipped the package). A token can't go in `.env.local` either way; see the `rag` layer's `ADDITIONS.md` Step 6 and the "RAG setup" section just inserted into `README.md` if one exists. Always say which of the two states it's in, every time the layer is scaffolded.
 - **Never report `rag` as skipped or optional-to-add-later** — the layer is mandatory and always scaffolded (only its token is deferrable). The one exception is Step 1 finding it already fully present, in which case just say it was left untouched.
+- Whether dependencies were installed in Step 4b: which command ran (`npm`/`pnpm`/`yarn`/`bun`), and whether it succeeded, was skipped (no `package.json`), or failed — quoting the error verbatim if it failed. If `@playwright/test` is now installed but its browsers aren't, add one line telling them to run the project's own browser-install script if it has one (the `core` scaffold ships `npm run install:browsers`), else `npx playwright install`, before any spec will run.
 - The config file path written.
 - The Step 2B convention defaults that were applied without asking — list them compactly (`readonlyLocators`, `mandatoryTestStep`, `noPageDotInSpec`, `enforceLoginPattern`, `builderFieldThreshold: 3`, and the TC-ID + tags `testHeaderFormat`) and say in one line that they're org standards, so the human can flag an exception now instead of discovering it later. Call out separately any default you overrode from existing-code evidence, and what the project does instead.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
