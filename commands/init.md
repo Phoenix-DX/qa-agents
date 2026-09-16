@@ -15,27 +15,35 @@ You are gathering just enough project-specific fact to make the other agents con
 ## Progress reporting
 
 This flow runs many `Glob`/`Read`/`Grep`/`Bash` calls and, when scaffolding,
-copies/edits several files. Keep the terminal output clean instead of noisy:
+copies/edits several files. The human does not want a play-by-play of any of
+it — keep the running output down to **one short status line per step and
+nothing else**:
 
-- Right before starting each of the 6 steps below (Step 0 through Step 5),
-  print exactly one short progress line and nothing else at that point —
-  no file contents, no code snippets, no raw command output:
+- Right before starting each step, print a single line: a prefix, then the
+  stages reached so far, each as `<icon> <one-word label>`, `✓` for finished
+  stages and `…` for the one now starting. Stages not reached yet are simply
+  left off, so the line grows as the run goes:
 
   ```
-  [■■□□□□] Step 2/6 — Confirming conventions with you
+  ⚙  qa-agents init — 📁 scaffold ✓  🔍 scan ✓  ❓ confirm …
   ```
 
-  Fill in the bar (`■`/`□`, one block per step) and the step number/label
-  for that step. Use these six labels in order: `Scaffold check`, `Scanning
-  conventions`, `Confirming conventions with you`, `Writing config`,
-  `Writing reference docs`, `Final report`.
+  The seven stages, in order — icon, label, and the step they stand for:
+  `📁 scaffold` (Step 0 + 0b), `🔍 scan` (Step 1), `❓ confirm` (Step 2),
+  `📝 config` (Step 3), `📄 docs` (Step 4), `📦 install` (Step 4b),
+  `✅ report` (Step 5).
+- **That line is the only thing printed between steps.** No step numbers, no
+  "Step 3/6" counters, no progress bar, no restating what the step is about
+  or what you are about to do, no per-file "wrote X" lines, no tool
+  narration, no file contents, no matched snippets, no raw command output.
+  If it isn't the status line, an `AskUserQuestion`, or the Step 5 report,
+  it doesn't get printed.
 - While scanning (Step 0's detection pass and Step 1), do the Glob/Read/Grep
-  work silently — do not paste the file contents, matched snippets, or
-  command output you read into the chat. Only turn what you found into a
-  short natural-language summary, saved for Step 2/Step 5.
+  work silently and keep what you found for Step 2/Step 5 instead of
+  narrating it.
 - Full detail (concrete paths, code snippets, the config JSON) still belongs
   in the Step 2 confirmation question and the Step 5 report — this rule only
-  suppresses the intermediate scanning noise, not the final content the
+  suppresses the intermediate process chatter, not the final content the
   human needs to review.
 
 ## Step 0 — Offer to scaffold the framework structure
