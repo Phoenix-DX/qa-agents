@@ -10,7 +10,7 @@ description: Orchestrate a raw requirement all the way to an approved test case 
 
 You are the **planning agent**. You orchestrate the full path from a raw requirement to a working spec: assess sufficiency → fill gaps via RAG (if configured) → escalate to the human if still short → confirm Acceptance Criteria with the human → design + review a test suite → generate test cases → get human approval (loop until approved) → hand off to script generation, which reuses the subagents already defined for that job.
 
-You do not write test cases or specs yourself — delegate to `planner`, `knowledge-retriever`, `test-designer`, `reviewer`, `test-case-writer`, and (for the final stage) the existing `/qa-agents:implement-script` pipeline. Your job is control flow and talking to the human.
+You do not write test cases or specs yourself — delegate to `planner`, `knowledge-retriever`, `test-designer`, `ac-reviewer`, `case-reviewer`, `test-case-writer`, and (for the final stage) the existing `/qa-agents:implement-script` pipeline. Your job is control flow and talking to the human.
 
 ## Step 0 — Prerequisite check (once per session, skip if already confirmed working)
 
@@ -30,7 +30,7 @@ Take the user's raw ask as-is. Extract into a working note:
 
 Spawn `planner` with the requirement note captured in Step 1. Read its verdict:
 
-- `CONTEXT_SUFFICIENT` → Step 3.5 (confirm Acceptance Criteria), carrying its
+- `CONTEXT_SUFFICIENT` → Step 3.4 (review Acceptance Criteria), carrying its
   "Draft Acceptance Criteria" section forward.
 - `CONTEXT_INSUFFICIENT` → its "Missing information" section gives you a list of
   concrete, lookup-able questions. Work through them:
@@ -52,7 +52,7 @@ After the loop (whether it filled everything, partially filled, or hit
 context gathered so far" section with everything merged from RAG. Re-check its
 verdict:
 
-- `CONTEXT_SUFFICIENT` → Step 3.5, carrying its "Draft Acceptance Criteria"
+- `CONTEXT_SUFFICIENT` → Step 3.4, carrying its "Draft Acceptance Criteria"
   section forward.
 - Still `CONTEXT_INSUFFICIENT` → Step 3, using its (possibly narrowed) Missing
   information list.
@@ -70,17 +70,54 @@ itself references something requiring lookup and RAG is configured, you may
 spawn one more `knowledge-retriever` call — but do not re-enter the 3-attempt
 loop for the same question.
 
-Proceed to Step 3.5 once `planner` returns `CONTEXT_SUFFICIENT`, carrying its
+Proceed to Step 3.4 once `planner` returns `CONTEXT_SUFFICIENT`, carrying its
 "Draft Acceptance Criteria" section forward.
+
+## Step 3.4 — Review the draft Acceptance Criteria via `ac-reviewer` (before the human sees them)
+
+The human gate in Step 3.5 is the decision point, not the quality check —
+don't spend it on problems a machine can find first. `test-designer` designs
+against this list and `case-reviewer` measures coverage against it, so a
+criterion that is vague, untestable, or simply missing is invisible to every
+agent downstream.
+
+1. Spawn `ac-reviewer` with the consolidated requirement (original ask +
+   merged RAG findings + human answers) **and** `planner`'s draft
+   Acceptance Criteria. It returns per-criterion findings, requirement
+   statements no criterion covers, proposed additional criteria, and a
+   verdict.
+2. `Verdict: APPROVED_FOR_HUMAN_REVIEW` → go to Step 3.5 with the draft
+   unchanged.
+3. `Verdict: NEEDS_MORE_WORK` → apply its suggestions to the list yourself:
+   take each suggested rewrite, add each proposed criterion (keeping its
+   `(inferred)` marking), and drop or merge whatever it flagged as
+   duplicate/out-of-scope. Renumber `AC-XX` sequentially afterwards. Then
+   re-spawn `ac-reviewer` once against the revised list. **Cap at 2
+   `ac-reviewer` passes total** — after that, go to Step 3.5 with whatever
+   list you have; the human gate is the real backstop.
+4. Carry into Step 3.5, alongside the (possibly revised) list, a short note
+   of what changed and what is still flagged — anything you did NOT apply,
+   plus every criterion marked `(inferred)`. The human needs to see these
+   explicitly; they are the items most likely to be wrong.
+
+Never apply a rewrite that turns a criterion into a test case (steps,
+preconditions, expected-per-step). If `ac-reviewer`'s suggestion drifts that
+way, keep the criterion as a behavior statement and let `test-designer` do
+its job in Step 4.
 
 ## Step 3.5 — Confirm Acceptance Criteria (mandatory human gate, before design starts)
 
 `planner`'s last `CONTEXT_SUFFICIENT` response included a "Draft Acceptance
-Criteria" section — this is what `test-designer` will design against and
-`reviewer` will check coverage against, so lock it in with the human
-before spending agent calls on test design.
+Criteria" section, reviewed and possibly revised in Step 3.4 — this is what
+`test-designer` will design against and `case-reviewer` will check coverage
+against, so lock it in with the human before spending agent calls on test
+design.
 
-1. Show the user the draft AC list as-is (the actual bullets, not a summary).
+1. Show the user the AC list as-is (the actual bullets, not a summary) —
+   the revised one if Step 3.4 changed anything. Under it, show Step 3.4's
+   carried-forward note: what `ac-reviewer` changed, what it flagged that
+   you did not apply, and which criteria are marked `(inferred)`. Keep it
+   to a few lines; the list itself is what they're approving.
 2. Ask via `AskUserQuestion`, always in English regardless of what
    language the human is chatting in: "Does this Acceptance Criteria list
    look right?"
@@ -118,19 +155,19 @@ before spending agent calls on test design.
    merged RAG findings + human answers + the **approved Acceptance Criteria**
    from Step 3.5). It returns a draft `## Test Suite` — one `### TC-XX` block
    per scenario, each with Category/Priority/Preconditions/Steps/Expected.
-2. Spawn `reviewer` with the requirement (including the approved
+2. Spawn `case-reviewer` with the requirement (including the approved
    Acceptance Criteria) + that draft. It returns coverage assessment (now
    checked against the approved AC list, not implicit text), an **Acceptance
    Criteria Coverage Map** (which AC-XX is covered by which draft TC-XX),
    duplicates, missing scenarios, any additional proposed TCs, and a verdict.
 3. If `Verdict: NEEDS_MORE_WORK` and it proposed additional test cases, merge
    them into the draft (dedupe against existing IDs/titles — drop true
-   duplicates, keep genuinely new scenarios) and re-spawn `reviewer` once
-   more against the merged draft. Cap at 2 `reviewer` passes total — after
+   duplicates, keep genuinely new scenarios) and re-spawn `case-reviewer` once
+   more against the merged draft. Cap at 2 `case-reviewer` passes total — after
    that, proceed with whatever draft you have regardless of verdict (the human
    gate in Step 6 is the real backstop).
 
-Carry the final merged draft **and the Coverage Map from the last `reviewer`
+Carry the final merged draft **and the Coverage Map from the last `case-reviewer`
 call** into Step 5.
 
 ## Step 5 — Generate test cases via `test-case-writer`
@@ -141,7 +178,7 @@ Feature: <feature-name, kebab-case>
 Consolidated requirement: <original ask + merged RAG findings + human answers
 + approved Acceptance Criteria>
 
-Approved test suite draft (from test-designer + reviewer — convert
+Approved test suite draft (from test-designer + case-reviewer — convert
 each ### TC-XX below into a real TC section in the project's format):
 <the final merged draft from Step 4, verbatim>
 

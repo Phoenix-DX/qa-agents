@@ -12,10 +12,10 @@ to that project's paths and conventions.
 .claude-plugin/
   plugin.json          plugin manifest
   marketplace.json      self-listing marketplace (this repo IS the marketplace)
-agents/                 12 subagents (planner, knowledge-retriever, test-designer,
-                         reviewer, test-case-writer, dom-inspector, pom-discoverer,
-                         pom-author, spec-runner, code-fixer, compliance-checker,
-                         spec-evaluator)
+agents/                 13 subagents (planner, knowledge-retriever, ac-reviewer,
+                         test-designer, case-reviewer, test-case-writer,
+                         dom-inspector, pom-discoverer, pom-author, spec-runner,
+                         code-fixer, compliance-checker, spec-evaluator)
 commands/
   init.md               /qa-agents:init — run once per target project first
   implement-requirement.md

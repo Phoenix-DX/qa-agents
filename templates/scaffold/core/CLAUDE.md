@@ -20,7 +20,7 @@ beyond running `/qa-agents:init` once (already done if this file exists).
 Each command orchestrates a set of specialized agents — `dom-inspector`,
 `spec-runner`, `pom-discoverer`, `pom-author`, `code-fixer`,
 `compliance-checker`, `spec-evaluator`, `planner`, `knowledge-retriever`,
-`test-designer`, `reviewer`, `test-case-writer`. These ship with the plugin
+`ac-reviewer`, `test-designer`, `case-reviewer`, `test-case-writer`. These ship with the plugin
 itself, not this repo — nothing to read or maintain here for them.
 
 ---

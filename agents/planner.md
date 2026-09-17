@@ -32,7 +32,7 @@ design a complete, confident test suite right now.
    Criteria from the requirement (+ any additional context given) — one
    testable, unambiguous statement per criterion (e.g. "System must reject
    booking when checkout date is before checkin date"). These are the
-   criteria the Test Designer will design against and the Reviewer
+   criteria the Test Designer will design against and the Case Reviewer
    will check coverage against, so they must be concrete enough to judge a
    test suite complete or incomplete against them. This is NOT test cases —
    no steps, no preconditions, just the testable statement of what must be
