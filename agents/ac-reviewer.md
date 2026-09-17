@@ -64,8 +64,50 @@ Assessment: <1-3 sentences>
 ### Proposed additional criteria (omit if none)
 - <testable criterion> — <why the requirement implies it> <(inferred) if not stated>
 
+### Metrics
+| Metric | Value |
+|---|---|
+| Criteria reviewed | <n> |
+| Below baseline | <n> |
+| Unmarked inferences | <n> |
+| Requirement statements with no criterion | <n> |
+| Proposed additional criteria | <n> |
+
+### Needs human review (<n> of <m>)
+- AC-03 — ambiguous: "quickly" is unquantified
+- AC-07 — (inferred), not stated in the requirement
+
 Verdict: <APPROVED_FOR_HUMAN_REVIEW | NEEDS_MORE_WORK>
 ```
+
+## Baseline — what the human actually has to read
+
+Reading every criterion one by one is what makes an approval gate slow, and
+slow gates get rubber-stamped. Your job is to make the human's reading list
+short and honest, not to hand them the whole list back.
+
+A criterion is **below baseline** — and therefore goes in "Needs human
+review" — if any of these is true:
+
+1. Its verdict row is anything other than `OK`.
+2. It is marked `(inferred)` — nobody stated it; only the human can confirm
+   it belongs.
+3. You suggested a rewrite for it.
+
+Everything else is **above baseline**: it is testable, unambiguous,
+traceable, in scope, and not overlapping. The human can skim those.
+
+Also list in "Needs human review", as their own lines:
+
+- every requirement statement with no criterion (`no AC covers this`), and
+- every criterion you propose adding.
+
+Both are decisions only a human can make — the first is a possible hole in
+the list, the second is a possible overreach.
+
+If nothing is below baseline, write `- none — every criterion passed the
+baseline` under the heading rather than omitting the section. The human
+needs to see that the check ran and came back empty.
 
 ## Constraints
 
@@ -81,3 +123,10 @@ Verdict: <APPROVED_FOR_HUMAN_REVIEW | NEEDS_MORE_WORK>
   `(inferred)` — never present it as a stated fact.
 - `NEEDS_MORE_WORK` requires at least one non-`OK` row, a missing-coverage
   entry, or a proposed criterion. Don't return that verdict on vibes.
+- Every number in Metrics is a count of something in the sections above it —
+  never a quality score you assign. There is no ground truth for "how good
+  is this criterion", so a number there would be invented, unreproducible,
+  and would anchor the human worse than no number at all.
+- "Needs human review" must be strictly shorter than the full list whenever
+  anything passed the baseline. If you find yourself listing every `AC-XX`,
+  re-check that you are flagging real defects and not preferences.
