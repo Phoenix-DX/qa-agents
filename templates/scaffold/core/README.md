@@ -38,7 +38,7 @@ If it's not already installed in your Claude Code session, add the
 marketplace and install the plugin once per machine:
 
 ```
-/plugin marketplace add UBT-global-software/qa-agents
+/plugin marketplace add Phoenix-DX/qa-agents
 /plugin install qa-agents@qa-agents-marketplace
 ```
 
