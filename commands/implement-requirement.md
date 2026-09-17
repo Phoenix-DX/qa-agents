@@ -95,10 +95,14 @@ agent downstream.
    re-spawn `ac-reviewer` once against the revised list. **Cap at 2
    `ac-reviewer` passes total** — after that, go to Step 3.5 with whatever
    list you have; the human gate is the real backstop.
-4. Carry into Step 3.5, alongside the (possibly revised) list, a short note
-   of what changed and what is still flagged — anything you did NOT apply,
-   plus every criterion marked `(inferred)`. The human needs to see these
-   explicitly; they are the items most likely to be wrong.
+4. Carry into Step 3.5, alongside the (possibly revised) list: the last
+   pass's **Metrics** table and its **Needs human review** list, plus a
+   short note of anything you did NOT apply. Those two sections are what
+   makes the gate fast — do not summarize them away, and do not re-derive
+   them yourself.
+   - If you applied a rewrite, the criterion stays on the review list under
+     its new wording: the human is confirming your edit, not `ac-reviewer`'s
+     original complaint.
 
 Never apply a rewrite that turns a criterion into a test case (steps,
 preconditions, expected-per-step). If `ac-reviewer`'s suggestion drifts that
@@ -113,11 +117,21 @@ Criteria" section, reviewed and possibly revised in Step 3.4 — this is what
 against, so lock it in with the human before spending agent calls on test
 design.
 
-1. Show the user the AC list as-is (the actual bullets, not a summary) —
-   the revised one if Step 3.4 changed anything. Under it, show Step 3.4's
-   carried-forward note: what `ac-reviewer` changed, what it flagged that
-   you did not apply, and which criteria are marked `(inferred)`. Keep it
-   to a few lines; the list itself is what they're approving.
+1. Show the user, **in this order**:
+   - **`Needs your review (n of m)`** — Step 3.4's list, verbatim, one line
+     per item with its reason. This is the only part they have to read
+     closely. Say so in one line: the rest passed the baseline (testable,
+     unambiguous, traceable, in scope) and is there to skim.
+   - The **Metrics** table from Step 3.4, as-is.
+   - The full AC list (the actual bullets, not a summary) — the revised one
+     if Step 3.4 changed anything. Mark each flagged criterion so they can
+     find it in the list.
+   - One line on anything `ac-reviewer` flagged that you did not apply.
+
+   They are still approving the whole list — the triage decides reading
+   order and effort, never what gets approved. If Step 3.4 was skipped or
+   returned nothing, say that plainly instead of presenting an empty
+   review list as a clean bill of health.
 2. Ask via `AskUserQuestion`, always in English regardless of what
    language the human is chatting in: "Does this Acceptance Criteria list
    look right?"
@@ -167,8 +181,9 @@ design.
    that, proceed with whatever draft you have regardless of verdict (the human
    gate in Step 6 is the real backstop).
 
-Carry the final merged draft **and the Coverage Map from the last `case-reviewer`
-call** into Step 5.
+Carry the final merged draft **and the Coverage Map, Metrics table, and
+`Needs human review` list from the last `case-reviewer` call** into Step 5
+(the Coverage Map feeds Step 5.5; the other two feed the Step 6 gate).
 
 ## Step 5 — Generate test cases via `test-case-writer`
 
@@ -217,7 +232,13 @@ Map's draft IDs into real TC file IDs.
 
 ## Step 6 — Human confirmation loop (do not skip, do not proceed without explicit approval)
 
-Show the user the generated TC content (the actual table, not just a summary), the updated Acceptance Criteria checklist from Step 5.5, and any flags from Step 5 — call out any unchecked AC item by name so the human can decide whether it's a real gap or acceptable to ship without. Ask via `AskUserQuestion`, always in English regardless of what language the human is chatting in:
+Show the user, **in this order**:
+
+1. **`Needs your review (n of m)`** — Step 4's `case-reviewer` list translated to the real TC IDs (draft TC-01 → TC001), plus every `<TODO: confirm ...>` flag from Step 5 and every AC still unchecked after Step 5.5. One line per item with its reason. Say in one line that this is the only part they have to read closely — the rest of the suite passed the baseline (maps to a criterion, not redundant, no unresolved placeholder).
+2. The **Metrics** table from Step 4, with `Acceptance Criteria covered` updated to Step 5.5's real count.
+3. The generated TC content — the actual table, not a summary — with the flagged cases marked so they can be found.
+
+Call out any unchecked AC item by name: only a human can decide whether it's a real gap or acceptable to ship without. They are approving the whole file — the triage decides reading order and effort, never what gets approved. Ask via `AskUserQuestion`, always in English regardless of what language the human is chatting in:
 
 - Question: "Do these test cases look right?"
 - Options: **Approve** / **Request changes** (free-text "Other" doubles as the changes description)

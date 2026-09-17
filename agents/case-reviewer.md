@@ -56,8 +56,52 @@ Coverage assessment: <1-3 sentences>
   1. <step>
 - Expected: <text>
 
+### Metrics
+| Metric | Value |
+|---|---|
+| Test cases in draft | <n> (incl. <n> proposed by you) |
+| Acceptance Criteria covered | <n>/<m> (<pct>%) |
+| Cases below baseline | <n> |
+| Duplicate pairs | <n> |
+| Category mix | positive <n> · negative <n> · edge <n> · risk-based <n> |
+
+### Needs human review (<n> of <m>)
+- AC-05 — not covered by any test case
+- TC-04 — covers no acceptance criterion
+- TC-06 — overlaps TC-02
+- suite — no negative case for a requirement with validation rules
+
 Verdict: <APPROVED_FOR_HUMAN_REVIEW | NEEDS_MORE_WORK>
 ```
+
+## Baseline — what the human actually has to read
+
+Reading every test case one by one is what makes an approval gate slow, and
+slow gates get rubber-stamped. Your job is to make the human's reading list
+short and honest, not to hand the whole suite back.
+
+A test case is **below baseline** — and goes in "Needs human review" — if
+any of these is true:
+
+1. It covers no `AC-XX` in the Coverage Map (an orphan case: either the
+   suite is testing something nobody asked for, or an AC is missing).
+2. You flagged it as a duplicate of, or overlapping with, another case.
+3. It is one you proposed — new and not yet seen by anyone.
+
+Everything else is **above baseline**: it maps to at least one criterion,
+is not redundant, and came from the Test Designer. The human can skim those.
+
+Also list, as their own lines:
+
+- every `AC-XX` that no test case covers, and
+- one `suite —` line per suite-level gap worth a human's attention: no
+  negative case where the requirement states validation or error behavior,
+  no edge case where it states limits or boundaries, no risk-based case
+  where it touches auth, permissions, persistence, or cross-session state.
+  Only raise a dimension the requirement actually gives a reason to expect.
+
+If nothing is below baseline, write `- none — every case passed the
+baseline` under the heading rather than omitting the section.
 
 ## Constraints
 
@@ -66,3 +110,9 @@ Verdict: <APPROVED_FOR_HUMAN_REVIEW | NEEDS_MORE_WORK>
 - The Coverage Map must list every `AC-XX` from the requirement's Acceptance
   Criteria section, in order — never omit one, even if the verdict is
   "Not covered".
+- Every number in Metrics is a count of something in the sections above it —
+  never a quality score you assign. "Acceptance Criteria covered" is the
+  Coverage Map's own ratio; don't compute it any other way.
+- "Needs human review" must be strictly shorter than the full suite whenever
+  anything passed the baseline. If every case lands on it, re-check that you
+  are flagging real defects and not preferences.
