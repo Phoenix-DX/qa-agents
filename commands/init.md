@@ -89,30 +89,15 @@ mapping this project to its Cortex registry entry instead.
    Step 1's Glob), `allure-playwright` in `package.json`, and an `src/api/` or
    `k6/` directory. Build a per-layer present/missing picture — don't guess,
    check the actual filesystem.
-2. **Always surface this to the human**, whether the project is empty or
-   already has a framework — unless literally everything in all three layers
-   is already present, in which case skip straight to step 3b and just state
-   that instead of asking a vacuous question. Otherwise ask, via
-   `AskUserQuestion` (single-select), how they want to proceed. (Every
-   literal question/option string shown anywhere in this file is asked in
-   **English, always** — regardless of what language the human is chatting
-   in. Don't localize these; this org standardized on English tooling
-   output on purpose.):
-   - **Default** — scaffold every layer that has anything missing, using
-     this plugin's generic templates as-is (no per-layer picking). Best for
-     an empty or near-empty project that just wants the whole starter
-     framework.
-   - **Custom** — pick exactly which layer(s) to scaffold now.
-3. **Resolve which layers to scaffold**, based on the answer to step 2:
-   - **3a. If Default** — treat every layer step 1 found not-fully-present
-     as selected. Still show what's already present per layer (so the human
-     knows it won't be touched) before proceeding — this is a statement, not
-     a second question.
-   - **3b. If Custom** — ask a second `AskUserQuestion` (multiSelect) over
-     `core`/`allure`/`api-k6`, showing what's already present vs.
-     missing per layer, and let them pick zero or more of those to
-     scaffold now.
-4. **For each selected layer**, copy every file from this plugin's
+2. **No question here — always scaffold every layer that has anything
+   missing**, using this plugin's generic templates as-is, whether the
+   project is empty or already has a framework. Don't ask `AskUserQuestion`
+   about which layers to scaffold and don't offer a Custom/pick-layers path
+   — the human can always ask afterward to remove or redo a specific layer
+   if they don't want it. Treat every layer Step 1 found not-fully-present
+   as selected. If literally everything in all three layers is already
+   present, just state that (a statement, not a question) and move on.
+3. **For each selected layer**, copy every file from this plugin's
    `templates/scaffold/<layer>/` into the equivalent path in the target
    project — including dotfiles like `.mcp.json` (don't let a hidden-file
    listing skip them) — then apply that layer's `ADDITIONS.md`
@@ -126,14 +111,14 @@ mapping this project to its Cortex registry entry instead.
    - **Never overwrite a file that already exists at the target path.** If a
      template file would collide with something already there, skip writing
      it and note the skip in the Step 5 report instead — this is existing
-     work, not yours to clobber. This applies identically in Default mode —
-     "default" means "fill in what's missing," never "clobber what's there."
+     work, not yours to clobber. Scaffolding everything missing means "fill
+     in what's missing," never "clobber what's there."
    - When merging into an existing `package.json` / `.gitignore` /
      `playwright.config.ts` / `eslint.config.mjs`, merge additively,
      and if a script/dep/section already exists with a *different* value
      than the template expects, keep the project's existing value and flag
      the conflict in Step 5 rather than overwriting it.
-5. **`core/src/pages/example/login.page.ts` and `src/global.setup.ts` are
+4. **`core/src/pages/example/login.page.ts` and `src/global.setup.ts` are
    starters, not real POMs** — they're deliberately full of `TODO` /
    placeholder locators (never invented real ones — same discipline as
    everywhere else in this plugin). Tell the human explicitly that these need
@@ -142,7 +127,7 @@ mapping this project to its Cortex registry entry instead.
    login: specs inherit the session from `storageState` and never
    authenticate themselves (`rules.enforceLoginPattern`, framework-rules.md
    §4). Deleting them applies only to an app with no authenticated area.
-6. Whatever layers were scaffolded (or none, if skipped), continue into
+5. Whatever layers were scaffolded (or none, if skipped), continue into
    Step 0b and then Step 1 — the scan there will pick up whatever structure
    just got written (or the project's pre-existing one) as "existing
    conventions." Dependencies are installed at the very end, in Step 4b,
