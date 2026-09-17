@@ -1,9 +1,9 @@
 # {{APP_SLUG}}
 
 TODO(init): replace this intro line with a one-sentence description of the
-app under test — mention POM/locator discipline, the API layer, the
-RAG-backed requirement pipeline, and k6 perf tests only if the matching
-scaffold layer (`api-k6`, `rag`) was actually selected; delete the rest.
+app under test — mention POM/locator discipline, the API layer, and k6 perf
+tests only if the matching scaffold layer (`api-k6`) was actually selected;
+delete the rest.
 
 ---
 
@@ -109,10 +109,7 @@ npm run allure                    # generate + open Allure
 ```
 
 TODO(init): not every branch above exists in every project — `src/api/`
-+ `k6/` (perf tests) only exist if the `api-k6` layer was scaffolded;
-`docs/` and `guide/rag-guide.md` always exist (the `rag` layer is
-mandatory), while `.npmrc` only exists once someone added a registry
-token here and `.rag/store.sqlite` only after a first index run. See
++ `k6/` (perf tests) only exist if the `api-k6` layer was scaffolded. See
 `.claude/qa-agents.config.json` for what's real here.
 
 ---
@@ -126,14 +123,13 @@ above) — nothing to install per-project beyond `/qa-agents:init` once
 
 | Slash | When | What it does |
 |---|---|---|
-| `/qa-agents:implement-requirement` | Raw requirement → test cases → spec, end to end | `planner` assesses context sufficiency, gap-fills via `knowledge-retriever` (RAG) or escalates to a human, `ac-reviewer` critiques the draft Acceptance Criteria before you approve them, `test-designer` + `case-reviewer` draft/critique test cases, human approves, `test-case-writer` produces the TC markdown, then hands off to `implement-script` |
+| `/qa-agents:implement-requirement` | Raw requirement → test cases → spec, end to end | `planner` assesses context sufficiency, gap-fills via `knowledge-retriever` (Cortex KG) or escalates to a human, `ac-reviewer` critiques the draft Acceptance Criteria before you approve them, `test-designer` + `case-reviewer` draft/critique test cases, human approves, `test-case-writer` produces the TC markdown, then hands off to `implement-script` |
 | `/qa-agents:implement-script <tc>.md` | Convert a TC → Playwright spec | `pom-discoverer` finds existing POM methods, `dom-inspector` inspects live DOM for locators, `pom-author` extends POMs if needed, spec is generated and confirmed via `spec-runner` |
 | `/qa-agents:implement-fix-script <spec>.ts` | Fix a failing spec, diagnose a flake | `spec-runner` classifies the failure (P1.1-P1.4 execution or P2.x compliance), `code-fixer` applies the matched fix, re-run to confirm |
-| `/qa-agents:implement-rag` (only if the `rag` layer was scaffolded) | Index new knowledge into the RAG store | Resolves the source (`docs/` folder by default, or a Jira/Confluence URL), runs `npm run rag:index`, reports what was indexed |
 | `/qa-agents:init` | Re-scan conventions / re-scaffold | Run again after conventions change |
 
-Full breakdown of every agent, framework rules, and the RAG pipeline lives
-in [`CLAUDE.md`](CLAUDE.md) and:
+Full breakdown of every agent, framework rules, and the Cortex KG-backed
+requirement pipeline lives in [`CLAUDE.md`](CLAUDE.md) and:
 - [`.claude/docs/framework-rules.md`](.claude/docs/framework-rules.md) — spec discipline, POM, locators, login, API services, naming
 - [`.claude/docs/intent-mapping.md`](.claude/docs/intent-mapping.md) — natural language → POM method mapping
 - [`.claude/docs/healing-rules.md`](.claude/docs/healing-rules.md) — priority-ordered healing playbook
@@ -171,11 +167,11 @@ npm run allure                                        # generate + open
 npm run test:perf                                      # smoke + load + stress
 npm run test:perf:smoke | test:perf:load | test:perf:stress
 npm run perf:report                                    # open k6 HTML report
-
-# rag layer (backs knowledge-retriever / implement-requirement)
-npm run rag:index                                      # index docs/ into the configured collection
-npm run rag:query -- "<question>"                      # ad-hoc lookup
 ```
+
+Knowledge lookup (`knowledge-retriever` / `implement-requirement`) is backed
+by UBT's Cortex KG via MCP tools — no local command for it; see
+`cortexProject` in `.claude/qa-agents.config.json`.
 
 ---
 
@@ -203,7 +199,6 @@ this is only a placeholder shape (one row per env pair).
 |---|---|
 | `APP_ADMIN_USERNAME_UAT` / `APP_ADMIN_PASSWORD_UAT` | Login used by `global.setup.ts` when `ENVIRONMENT=uat` |
 | `APP_ADMIN_USERNAME_PROD` / `APP_ADMIN_PASSWORD_PROD` | Same, for `ENVIRONMENT=prod` |
-| `JIRA_EMAIL` / `JIRA_API_TOKEN` (only if the `rag` layer was scaffolded) | Only needed for `npm run rag:index -- --url=<jira-or-confluence-url>` (Atlassian API token, not your account password) |
 
 **CI:** add the same vars as repo secrets. The pipeline injects them as job
 env, and the pair matching the selected environment is the one actually
@@ -217,7 +212,8 @@ used.
 |---|---|
 | Code change doesn't seem to take effect | Verify the file on disk matches your edit, then clear Playwright's transform cache (`$TMPDIR/playwright-transform-cache` on macOS/Linux) |
 | `global.setup.ts` still behaves like the old version after editing it or `playwright.config.ts` | Restart Claude Code — the MCP server (`dom-inspector`'s tools) caches modules in `require.cache` |
-| `knowledge-retriever` returns `RAG_UNAVAILABLE` (only if the `rag` layer was scaffolded) | Nothing indexed yet — drop a doc in `docs/` and run `/qa-agents:implement-rag` |
+| `knowledge-retriever` returns `NO_ACCESS` | `cortexProject` is set but the calling identity has no Cortex entitlement for it yet — ask a KB steward to grant access, then retry |
+| `knowledge-retriever` returns `CORTEX_UNAVAILABLE` | `cortexProject` is unset, or this project isn't registered in Cortex — re-run `/qa-agents:init` to confirm the mapping |
 
 ---
 

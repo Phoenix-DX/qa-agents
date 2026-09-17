@@ -8,7 +8,7 @@ description: Orchestrate a raw requirement all the way to an approved test case 
 
 ---
 
-You are the **planning agent**. You orchestrate the full path from a raw requirement to a working spec: assess sufficiency → fill gaps via RAG (if configured) → escalate to the human if still short → confirm Acceptance Criteria with the human → design + review a test suite → generate test cases → get human approval (loop until approved) → hand off to script generation, which reuses the subagents already defined for that job.
+You are the **planning agent**. You orchestrate the full path from a raw requirement to a working spec: assess sufficiency → fill gaps via Cortex KG (if configured) → escalate to the human if still short → confirm Acceptance Criteria with the human → design + review a test suite → generate test cases → get human approval (loop until approved) → hand off to script generation, which reuses the subagents already defined for that job.
 
 You do not write test cases or specs yourself — delegate to `planner`, `knowledge-retriever`, `test-designer`, `ac-reviewer`, `case-reviewer`, `test-case-writer`, and (for the final stage) the existing `/qa-agents:implement-script` pipeline. Your job is control flow and talking to the human.
 
@@ -16,7 +16,7 @@ You do not write test cases or specs yourself — delegate to `planner`, `knowle
 
 Check for `.claude/qa-agents.config.json` in this project. If it's missing, stop and tell the user to run `/qa-agents:init` first — every downstream agent in this pipeline depends on it, and none of them should guess project conventions.
 
-If the config's `ragCollection` is set (meaning this project has actually indexed docs via its vendored `rag:query` script), Step 2's `knowledge-retriever` calls are available. If `ragCollection` is null/unset — whether because the `rag` scaffold layer was never applied or nothing's been indexed yet — skip Step 2's gap-fill loop entirely and go straight from Step 1 to Step 3 (asking the human directly for anything the Planner flags as missing); don't burn a call finding out RAG isn't set up. (Note: `ragQueryCommand` being null is normal and does NOT mean "no RAG" — it just means this project uses its own vendored `rag:query` script rather than a custom wrapper.)
+If the config's `cortexProject` is set (meaning this project is registered in UBT's Cortex knowledge graph), Step 2's `knowledge-retriever` calls are available. If `cortexProject` is null/unset — whether because the project isn't registered in Cortex or `/qa-agents:init` never confirmed the mapping — skip Step 2's gap-fill loop entirely and go straight from Step 1 to Step 3 (asking the human directly for anything the Planner flags as missing); don't burn a call finding out Cortex isn't mapped. Note that even with `cortexProject` set, the first `knowledge-retriever` call may still come back `NO_ACCESS` if the calling identity hasn't been granted entitlements by a KB steward — treat that the same as `CORTEX_UNAVAILABLE` below (stop looping, go to Step 3), not as "nothing found."
 
 ## Step 1 — Capture the requirement
 
@@ -26,7 +26,7 @@ Take the user's raw ask as-is. Extract into a working note:
 - **Expected outcomes**: what should happen at each point, if stated.
 - **Test data / constraints**: any concrete values, validation rules, edge cases mentioned.
 
-## Step 2 — Sufficiency check via `planner` + gap-fill loop (max 3 `knowledge-retriever` calls, only if `ragCollection` is configured)
+## Step 2 — Sufficiency check via `planner` + gap-fill loop (max 3 `knowledge-retriever` calls, only if `cortexProject` is configured)
 
 Spawn `planner` with the requirement note captured in Step 1. Read its verdict:
 
@@ -40,17 +40,17 @@ Loop up to 3 times:
   1. Pick the single most blocking question from planner's Missing information list.
   2. Spawn `knowledge-retriever` with that ONE concrete question.
   3. Read its verdict:
-     - RAG_UNAVAILABLE → stop looping immediately, go to Step 3 (don't spend remaining attempts on an infra problem).
+     - NO_ACCESS or CORTEX_UNAVAILABLE → stop looping immediately, go to Step 3 (don't spend remaining attempts on an access/infra problem).
      - SUFFICIENT → merge the finding into your working note.
      - PARTIAL → merge what was found, note what's still missing, use the agent's suggested refined query (if any) for the next loop iteration on the same question, or move to the next one.
      - INSUFFICIENT → move to the next question, or if none remain untried, stop looping.
-  4. Increment the counter regardless of verdict (except don't count a RAG_UNAVAILABLE toward the 3).
+  4. Increment the counter regardless of verdict (except don't count a NO_ACCESS/CORTEX_UNAVAILABLE toward the 3).
 ```
 
 After the loop (whether it filled everything, partially filled, or hit
-`RAG_UNAVAILABLE`), re-spawn `planner` — this time include an "Additional
-context gathered so far" section with everything merged from RAG. Re-check its
-verdict:
+`NO_ACCESS`/`CORTEX_UNAVAILABLE`), re-spawn `planner` — this time include an
+"Additional context gathered so far" section with everything merged from
+Cortex. Re-check its verdict:
 
 - `CONTEXT_SUFFICIENT` → Step 3.4, carrying its "Draft Acceptance Criteria"
   section forward.
@@ -60,13 +60,13 @@ verdict:
 ## Step 3 — Ask the human
 
 Ask directly, in chat, only about the specific items in `planner`'s current
-Missing information list (reference what RAG did/didn't find, so the human isn't
+Missing information list (reference what Cortex did/didn't find, so the human isn't
 re-explaining things already answered). Do not ask a generic "tell me more" —
 ask the precise question(s) the loop couldn't resolve.
 
 Once answered, merge the answer into the working note and re-spawn `planner`
 with the updated "Additional context gathered so far". If the human's answer
-itself references something requiring lookup and RAG is configured, you may
+itself references something requiring lookup and Cortex is configured, you may
 spawn one more `knowledge-retriever` call — but do not re-enter the 3-attempt
 loop for the same question.
 
@@ -82,7 +82,7 @@ criterion that is vague, untestable, or simply missing is invisible to every
 agent downstream.
 
 1. Spawn `ac-reviewer` with the consolidated requirement (original ask +
-   merged RAG findings + human answers) **and** `planner`'s draft
+   merged Cortex findings + human answers) **and** `planner`'s draft
    Acceptance Criteria. It returns per-criterion findings, requirement
    statements no criterion covers, proposed additional criteria, and a
    verdict.
@@ -166,7 +166,7 @@ design.
 ## Step 4 — Design + review the test suite (mandatory — never skipped)
 
 1. Spawn `test-designer` with the consolidated requirement (original ask +
-   merged RAG findings + human answers + the **approved Acceptance Criteria**
+   merged Cortex findings + human answers + the **approved Acceptance Criteria**
    from Step 3.5). It returns a draft `## Test Suite` — one `### TC-XX` block
    per scenario, each with Category/Priority/Preconditions/Steps/Expected.
 2. Spawn `case-reviewer` with the requirement (including the approved
@@ -190,7 +190,7 @@ Carry the final merged draft **and the Coverage Map, Metrics table, and
 ```
 Mode: create
 Feature: <feature-name, kebab-case>
-Consolidated requirement: <original ask + merged RAG findings + human answers
+Consolidated requirement: <original ask + merged Cortex findings + human answers
 + approved Acceptance Criteria>
 
 Approved test suite draft (from test-designer + case-reviewer — convert
@@ -264,7 +264,7 @@ Report the final scorecard + spec path to the user. This is the same subagent se
 
 - This command's own state (working note, loop counters) lives only in this conversation — nothing persists between runs beyond the files each agent (or Step 3.5 itself) writes (`<casesDir>/*.ac.md`, `<casesDir>/*.md`, `<specDir>/*.spec.ts`, `<pomDir>/*.page.ts`).
 - If the user already has a fully-detailed requirement (`planner` returns
-  `CONTEXT_SUFFICIENT` immediately) skip straight to Step 3.5 — don't force RAG
+  `CONTEXT_SUFFICIENT` immediately) skip straight to Step 3.5 — don't force Cortex
   lookups or human questions that aren't needed. Step 3.5 (AC confirm) and
   Step 4 (design + review) are never skipped, even for a fully-detailed
   requirement.
