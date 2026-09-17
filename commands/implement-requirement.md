@@ -10,7 +10,7 @@ description: Orchestrate a raw requirement all the way to an approved test case 
 
 You are the **planning agent**. You orchestrate the full path from a raw requirement to a working spec: assess sufficiency → fill gaps via Cortex KG (if configured) → escalate to the human if still short → confirm Acceptance Criteria with the human → design + review a test suite → generate test cases → get human approval (loop until approved) → hand off to script generation, which reuses the subagents already defined for that job.
 
-You do not write test cases or specs yourself — delegate to `planner`, `knowledge-retriever`, `test-designer`, `ac-reviewer`, `case-reviewer`, `test-case-writer`, and (for the final stage) the existing `/qa-agents:implement-script` pipeline. Your job is control flow and talking to the human.
+You do not write test cases or specs yourself — delegate to `planner`, `knowledge-retriever`, `case-designer`, `ac-reviewer`, `case-reviewer`, `case-writer`, and (for the final stage) the existing `/qa-agents:implement-script` pipeline. Your job is control flow and talking to the human.
 
 ## Step 0 — Prerequisite check (once per session, skip if already confirmed working)
 
@@ -76,7 +76,7 @@ Proceed to Step 3.4 once `planner` returns `CONTEXT_SUFFICIENT`, carrying its
 ## Step 3.4 — Review the draft Acceptance Criteria via `ac-reviewer` (before the human sees them)
 
 The human gate in Step 3.5 is the decision point, not the quality check —
-don't spend it on problems a machine can find first. `test-designer` designs
+don't spend it on problems a machine can find first. `case-designer` designs
 against this list and `case-reviewer` measures coverage against it, so a
 criterion that is vague, untestable, or simply missing is invisible to every
 agent downstream.
@@ -106,14 +106,14 @@ agent downstream.
 
 Never apply a rewrite that turns a criterion into a test case (steps,
 preconditions, expected-per-step). If `ac-reviewer`'s suggestion drifts that
-way, keep the criterion as a behavior statement and let `test-designer` do
+way, keep the criterion as a behavior statement and let `case-designer` do
 its job in Step 4.
 
 ## Step 3.5 — Confirm Acceptance Criteria (mandatory human gate, before design starts)
 
 `planner`'s last `CONTEXT_SUFFICIENT` response included a "Draft Acceptance
 Criteria" section, reviewed and possibly revised in Step 3.4 — this is what
-`test-designer` will design against and `case-reviewer` will check coverage
+`case-designer` will design against and `case-reviewer` will check coverage
 against, so lock it in with the human before spending agent calls on test
 design.
 
@@ -165,7 +165,7 @@ design.
 
 ## Step 4 — Design + review the test suite (mandatory — never skipped)
 
-1. Spawn `test-designer` with the consolidated requirement (original ask +
+1. Spawn `case-designer` with the consolidated requirement (original ask +
    merged Cortex findings + human answers + the **approved Acceptance Criteria**
    from Step 3.5). It returns a draft `## Test Suite` — one `### TC-XX` block
    per scenario, each with Category/Priority/Preconditions/Steps/Expected.
@@ -185,7 +185,7 @@ Carry the final merged draft **and the Coverage Map, Metrics table, and
 `Needs human review` list from the last `case-reviewer` call** into Step 5
 (the Coverage Map feeds Step 5.5; the other two feed the Step 6 gate).
 
-## Step 5 — Generate test cases via `test-case-writer`
+## Step 5 — Generate test cases via `case-writer`
 
 ```
 Mode: create
@@ -193,7 +193,7 @@ Feature: <feature-name, kebab-case>
 Consolidated requirement: <original ask + merged Cortex findings + human answers
 + approved Acceptance Criteria>
 
-Approved test suite draft (from test-designer + case-reviewer — convert
+Approved test suite draft (from case-designer + case-reviewer — convert
 each ### TC-XX below into a real TC section in the project's format):
 <the final merged draft from Step 4, verbatim>
 
@@ -203,7 +203,7 @@ Handoff notes:
   Expected per whole scenario, the repo format needs one Expected per table
   row.
 - Drop Category/Priority — there's usually no field for them in the repo's TC
-  table format (confirm against what test-case-writer discovers).
+  table format (confirm against what case-writer discovers).
 - If a scenario's Preconditions implies a UI action (e.g. "logged in as a
   specific role", "entity X already exists"), convert it into an explicit
   step 1 rather than discarding it.
@@ -216,7 +216,7 @@ Agent writes `<casesDir>/<feature>.md` and reports scenarios + any `<TODO: confi
 ## Step 5.5 — Check off Acceptance Criteria coverage
 
 You already know the draft-TC-XX → repo-TC00X mapping — it's the same
-sequential-by-position rule you gave `test-case-writer` in Step 5 (draft TC-01
+sequential-by-position rule you gave `case-writer` in Step 5 (draft TC-01
 → TC001, etc.), so no extra lookup is needed to translate the Step 4 Coverage
 Map's draft IDs into real TC file IDs.
 
@@ -244,7 +244,7 @@ Call out any unchecked AC item by name: only a human can decide whether it's a r
 - Options: **Approve** / **Request changes** (free-text "Other" doubles as the changes description)
 
 - **Approve** → Step 7.
-- **Request changes** → spawn `test-case-writer` again with `Mode: revise` and the human's exact feedback, then repeat Step 6 with the updated content. Loop until approved. There is no attempt cap here — keep iterating until the human says yes.
+- **Request changes** → spawn `case-writer` again with `Mode: revise` and the human's exact feedback, then repeat Step 6 with the updated content. Loop until approved. There is no attempt cap here — keep iterating until the human says yes.
 
 ## Step 7 — Script generation (reuse existing subagents)
 

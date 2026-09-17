@@ -13,7 +13,7 @@ to that project's paths and conventions.
   plugin.json          plugin manifest
   marketplace.json      self-listing marketplace (this repo IS the marketplace)
 agents/                 13 subagents (planner, knowledge-retriever, ac-reviewer,
-                         test-designer, case-reviewer, test-case-writer,
+                         case-designer, case-reviewer, case-writer,
                          dom-inspector, pom-discoverer, pom-author, spec-runner,
                          code-fixer, compliance-checker, spec-evaluator)
 commands/
@@ -122,7 +122,7 @@ triggers — Cortex's own ingestion pipeline owns that.
   *inside* the target project, not a shell script that runs automatically on
   install.
 - **Config over hard-coding.** `pom-discoverer`, `pom-author`,
-  `compliance-checker`, `spec-evaluator`, and `test-case-writer` all read
+  `compliance-checker`, `spec-evaluator`, and `case-writer` all read
   `.claude/qa-agents.config.json` at runtime via the normal `Read` tool —
   no special mechanism needed. If the config is missing, they refuse and
   point the caller at `/qa-agents:init` rather than guessing a path.

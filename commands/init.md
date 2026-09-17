@@ -181,7 +181,7 @@ never grounds for turning it into a question:
    - Call `mcp__claude_ai_Cortex__list_registered_projects` (or `resolve_project` if a clear candidate name is already known) and try to match this target project against a `canonical_key`/`display_name`/`aliases` entry, using the target project's `package.json` `name`, its directory name, and any Jira/repo naming mentioned in existing docs.
    - If the tool call itself fails or returns an entitlements/access error, don't treat that as "no match" — note that Cortex access may be blocked for the current identity, and say so plainly in Step 5's report; still let the human set `cortexProject` manually in Step 2 if they know the right key, since the config field doesn't require a successful lookup to be set.
    - If nothing matches with reasonable confidence, don't guess — leave it as "no confident match" for Step 2 to ask about, rather than picking the closest-sounding project.
-7. Check for a project instructions file (`CLAUDE.md` or similar) that already documents test-case format rules — if found, don't duplicate its content into the config; just note its path so `test-case-writer` reads it directly.
+7. Check for a project instructions file (`CLAUDE.md` or similar) that already documents test-case format rules — if found, don't duplicate its content into the config; just note its path so `case-writer` reads it directly.
 
 ## Step 2 — Confirm paths with the human; convention rules are org defaults, not questions
 

@@ -123,7 +123,7 @@ above) — nothing to install per-project beyond `/qa-agents:init` once
 
 | Slash | When | What it does |
 |---|---|---|
-| `/qa-agents:implement-requirement` | Raw requirement → test cases → spec, end to end | `planner` assesses context sufficiency, gap-fills via `knowledge-retriever` (Cortex KG) or escalates to a human, `ac-reviewer` critiques the draft Acceptance Criteria before you approve them, `test-designer` + `case-reviewer` draft/critique test cases, human approves, `test-case-writer` produces the TC markdown, then hands off to `implement-script` |
+| `/qa-agents:implement-requirement` | Raw requirement → test cases → spec, end to end | `planner` assesses context sufficiency, gap-fills via `knowledge-retriever` (Cortex KG) or escalates to a human, `ac-reviewer` critiques the draft Acceptance Criteria before you approve them, `case-designer` + `case-reviewer` draft/critique test cases, human approves, `case-writer` produces the TC markdown, then hands off to `implement-script` |
 | `/qa-agents:implement-script <tc>.md` | Convert a TC → Playwright spec | `pom-discoverer` finds existing POM methods, `dom-inspector` inspects live DOM for locators, `pom-author` extends POMs if needed, spec is generated and confirmed via `spec-runner` |
 | `/qa-agents:implement-fix-script <spec>.ts` | Fix a failing spec, diagnose a flake | `spec-runner` classifies the failure (P1.1-P1.4 execution or P2.x compliance), `code-fixer` applies the matched fix, re-run to confirm |
 | `/qa-agents:init` | Re-scan conventions / re-scaffold | Run again after conventions change |
