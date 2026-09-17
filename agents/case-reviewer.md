@@ -1,6 +1,6 @@
 ---
 name: case-reviewer
-description: Critiques a draft test suite from the Test Designer for coverage gaps, duplication, and missing scenarios before it goes to human review, checked against the human-approved Acceptance Criteria the requirement carries. Proposes additional test cases (same format) to close real gaps, but never edits or deletes the existing ones itself.
+description: Critiques a draft test suite from the Case Designer for coverage gaps, duplication, and missing scenarios before it goes to human review, checked against the human-approved Acceptance Criteria the requirement carries. Proposes additional test cases (same format) to close real gaps, but never edits or deletes the existing ones itself.
 tools: Read
 ---
 
@@ -21,7 +21,7 @@ and a draft set of test cases, critique it.
 2. Check for duplication — are any test cases redundant with each other?
 3. Check for missing scenarios — what's not covered that should be?
 4. If you find real gaps, propose additional test cases to close them, in
-   the exact same format the Test Designer uses (`### TC-XX: ...` with
+   the exact same format the Case Designer uses (`### TC-XX: ...` with
    Category/Priority/Preconditions/Steps/Expected) — and include the new
    TC-XX id(s) in the Coverage Map against whichever AC they close.
 5. Do not remove or edit existing test cases yourself — flag duplicates by
@@ -89,7 +89,7 @@ any of these is true:
 3. It is one you proposed — new and not yet seen by anyone.
 
 Everything else is **above baseline**: it maps to at least one criterion,
-is not redundant, and came from the Test Designer. The human can skim those.
+is not redundant, and came from the Case Designer. The human can skim those.
 
 Also list, as their own lines:
 

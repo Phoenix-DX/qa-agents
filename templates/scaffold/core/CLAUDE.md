@@ -14,13 +14,12 @@ beyond running `/qa-agents:init` once (already done if this file exists).
 | Raw requirement → test cases → spec, end to end | `/qa-agents:implement-requirement` |
 | Convert an existing TC markdown file → Playwright spec | `/qa-agents:implement-script` |
 | Fix a failing spec, diagnose a flake | `/qa-agents:implement-fix-script` |
-| Index new knowledge into the RAG store (if the `rag` layer was scaffolded) | `/qa-agents:implement-rag` |
 | Re-scan conventions / re-scaffold (run again after conventions change) | `/qa-agents:init` |
 
 Each command orchestrates a set of specialized agents — `dom-inspector`,
 `spec-runner`, `pom-discoverer`, `pom-author`, `code-fixer`,
 `compliance-checker`, `spec-evaluator`, `planner`, `knowledge-retriever`,
-`ac-reviewer`, `test-designer`, `case-reviewer`, `test-case-writer`. These ship with the plugin
+`ac-reviewer`, `case-designer`, `case-reviewer`, `case-writer`. These ship with the plugin
 itself, not this repo — nothing to read or maintain here for them.
 
 ---
@@ -28,8 +27,8 @@ itself, not this repo — nothing to read or maintain here for them.
 ## 2. Project Conventions
 
 This project's actual conventions (POM directory, spec directory,
-test-case directory, spec/POM style rules, lint command, RAG collection,
-test header format) are recorded in:
+test-case directory, spec/POM style rules, lint command, Cortex KG project
+mapping, test header format) are recorded in:
 
 - `.claude/qa-agents.config.json` — machine-readable, read by every agent
   above.
@@ -62,9 +61,6 @@ src/
 
 k6/                          perf tests (smoke/load/stress) — only if the
                               api-k6 layer was scaffolded
-docs/, guide/rag-guide.md,
-.npmrc.example                RAG ingestion (private npm package, installed
-                              as an optional dependency, no vendored source)
 ```
 
 `casesDir` in `.claude/qa-agents.config.json` may point elsewhere if the
@@ -108,20 +104,17 @@ npm run allure
 
 # api-k6 layer
 npm run test:perf
-
-# rag layer
-npm run rag:index                   # index docs/ (default) into the RAG store
-npm run rag:query -- "<question>"   # ad-hoc lookup — same query knowledge-retriever runs
 ```
 
-### RAG-first for domain/requirement questions (rag layer only)
+### Cortex-first for domain/requirement questions (if `cortexProject` is set)
 
 Even outside `/qa-agents:implement-requirement` — e.g. a direct chat
-question about a business rule, validation, or navigation path — check the
-RAG store before answering from general knowledge:
-`npm run rag:query -- "<question>"`, or delegate to the
-`knowledge-retriever` agent for a structured verdict. If retrieval returns
-nothing relevant, say so explicitly rather than guessing.
+question about a business rule, validation, or navigation path — check
+UBT's Cortex knowledge graph before answering from general knowledge:
+delegate to the `knowledge-retriever` agent for a structured verdict
+(`SUFFICIENT`/`PARTIAL`/`INSUFFICIENT`/`NO_ACCESS`/`CORTEX_UNAVAILABLE`). If
+retrieval returns nothing relevant, or access is denied, say so explicitly
+rather than guessing.
 
 ---
 

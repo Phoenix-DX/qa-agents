@@ -13,7 +13,7 @@ to that project's paths and conventions.
   plugin.json          plugin manifest
   marketplace.json      self-listing marketplace (this repo IS the marketplace)
 agents/                 13 subagents (planner, knowledge-retriever, ac-reviewer,
-                         test-designer, case-reviewer, test-case-writer,
+                         case-designer, case-reviewer, case-writer,
                          dom-inspector, pom-discoverer, pom-author, spec-runner,
                          code-fixer, compliance-checker, spec-evaluator)
 commands/
@@ -21,7 +21,6 @@ commands/
   implement-requirement.md
   implement-script.md
   implement-fix-script.md
-  implement-rag.md
 docs/
   framework-rules.template.md   filled in per-project by /qa-agents:init
   intent-mapping.template.md    filled in per-project by /qa-agents:init
@@ -48,7 +47,8 @@ Then, inside the target project:
 ```
 
 This scans the target project for its actual POM directory, spec directory,
-test-case directory, spec/POM style conventions, and lint/RAG commands, then
+test-case directory, spec/POM style conventions, and lint command, and tries
+to map the project to its entry in UBT's Cortex knowledge graph, then
 writes `.claude/qa-agents.config.json` (and optionally
 `.claude/docs/framework-rules.md` / `intent-mapping.md`, adapted from the
 `docs/*.template.md` files in this plugin). Every other command and agent in
@@ -78,46 +78,34 @@ that's expected, not a bug.
 If the target project has no Playwright/POM framework yet (or is missing
 pieces of one), `/qa-agents:init` offers — before it scans anything — to copy
 a generic starter skeleton from `templates/scaffold/` into the project, in
-four layers — three independently-selectable plus a mandatory `rag`:
-`core` (Playwright config, TS config,
+three independently-selectable layers: `core` (Playwright config, TS config,
 lint, a `.mcp.json` wiring up the `playwright-test` MCP server `dom-inspector`
 needs, a generic `CLAUDE.md` starter, base POM class, fixtures, a TODO-marked
 auth starter), `allure`
-(reporting), `api-k6` (a generic REST API layer + k6 perf tests against the
-public Petstore demo), and `rag` — always scaffolded, never a
-checkbox (installs a private, prebuilt RAG CLI —
-e.g. `@phoenix-dx/rag-cli` — as an optional npm dependency from an internal
-registry, plus a `docs/` docs-drop folder; org policy is to never vendor
-RAG source into a target repo, so this is the only mode offered, see
-below). It always asks first — **Default** (scaffold every layer with
-anything missing) or
-**Custom** (pick specific layers, `rag` aside — that one is always
-included) — shows what's already present vs. missing per layer either
-way, and never overwrites a file that's already there.
+(reporting), and `api-k6` (a generic REST API layer + k6 perf tests against the
+public Petstore demo). It always asks first — **Default** (scaffold every
+layer with anything missing) or **Custom** (pick specific layers) — shows
+what's already present vs. missing per layer either way, and never
+overwrites a file that's already there.
 
-### Using the `rag` layer
+### Knowledge lookup via Cortex KG
 
-Once scaffolded, index docs from inside Claude Code — don't call `npm run
-rag:index` directly:
+Requirement/business-rule gap-filling (`knowledge-retriever`, used inside
+`/qa-agents:implement-requirement`) is backed by UBT's **Cortex** knowledge
+graph — a company-wide, centrally-maintained index of Jira/Confluence/code
+across every UBT product, reached via MCP tools already available in a
+Claude Code session with Cortex configured. There's nothing to scaffold or
+install per-project for this: no npm package, no local vector store, no
+registry token.
 
-```
-/qa-agents:implement-rag    index docs/ (or a Jira/Confluence URL) into the RAG store
-```
-
-Querying isn't a separate command — `knowledge-retriever` calls it
-automatically during `/qa-agents:implement-requirement` whenever a
-requirement has a gap indexed docs might fill.
-
-`@phoenix-dx/rag-cli` is a private package published to GitHub Packages,
-scaffolded into `optionalDependencies` on purpose: `npm install` succeeds
-with no registry token at all — npm just skips the package — so a teammate
-who never touches RAG is never blocked. Only `npm run rag:index`/`rag:query`
-(and therefore `knowledge-retriever`) need auth. `/qa-agents:init` asks once
-whether to paste a token now or add it later, and either way explains where
-it goes: preferably two lines in `~/.npmrc` (once per machine, survives
-every fresh clone), or per-clone in the project's gitignored `.npmrc`. See
-the "RAG setup" section `/qa-agents:init` inserts into the scaffolded
-project's own `README.md`.
+`/qa-agents:init` tries to map the target project to its Cortex canonical
+project key (e.g. `LDM`) and records it as `cortexProject` in
+`.claude/qa-agents.config.json`. A confirmed mapping still doesn't guarantee
+results — Cortex access is **entitlement-gated per identity**: a KB steward
+has to grant the calling account read access to that project's sources
+before `search_knowledge_base`/`get_feature`/etc. return anything instead of
+an access-denied verdict. There's no local indexing step a QA engineer
+triggers — Cortex's own ingestion pipeline owns that.
 
 ## Then use
 
@@ -125,7 +113,6 @@ project's own `README.md`.
 /qa-agents:implement-requirement    raw requirement -> approved TC -> spec
 /qa-agents:implement-script         existing TC markdown -> spec
 /qa-agents:implement-fix-script     heal a failing spec
-/qa-agents:implement-rag            index docs/ (or a Jira/Confluence URL) into the RAG store
 ```
 
 ## Design notes
@@ -135,7 +122,7 @@ project's own `README.md`.
   *inside* the target project, not a shell script that runs automatically on
   install.
 - **Config over hard-coding.** `pom-discoverer`, `pom-author`,
-  `compliance-checker`, `spec-evaluator`, and `test-case-writer` all read
+  `compliance-checker`, `spec-evaluator`, and `case-writer` all read
   `.claude/qa-agents.config.json` at runtime via the normal `Read` tool —
   no special mechanism needed. If the config is missing, they refuse and
   point the caller at `/qa-agents:init` rather than guessing a path.
@@ -153,14 +140,16 @@ project's own `README.md`.
   marketplace add`+`/plugin install`+restart-session+`/qa-agents:init` path
   against a real second project — worth doing before relying on this for a
   team's actual work.
-- `knowledge-retriever` is OPTIONAL and targets this project's own vendored
-  `npm run rag:query` script (from `/qa-agents:init`'s `rag` scaffold
-  layer) — no external tool install required.
-  `.claude/qa-agents.config.json`'s `ragCollection` field records whether a
-  project has actually indexed docs (set = RAG available, null = skip the
-  gap-fill loop in `implement-requirement.md`); `ragQueryCommand` is a
-  rarely-needed override for a project using something other than its own
-  vendored `rag:query` script — it being `null` does NOT mean "no RAG."
+- `knowledge-retriever` is OPTIONAL and queries UBT's Cortex knowledge graph
+  via MCP tools already available in the Claude Code session — no
+  per-project install required. `.claude/qa-agents.config.json`'s
+  `cortexProject` field records the canonical Cortex project key
+  `/qa-agents:init` mapped this project to (set = Cortex lookups attempted,
+  null = skip the gap-fill loop in `implement-requirement.md`). A non-null
+  `cortexProject` does not guarantee results — Cortex access is
+  entitlement-gated per identity, and `knowledge-retriever` reports
+  `NO_ACCESS` distinctly from an empty/`INSUFFICIENT` result when the
+  calling identity hasn't been granted read access.
 - The `rules.*` flag set in the config is a first pass at "common POM/spec
   style choices" (readonly locators, mandatory step-wrapper, no direct
   page-interaction calls in specs, data-builder threshold) — a project with

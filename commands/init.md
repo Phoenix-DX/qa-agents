@@ -71,122 +71,33 @@ nothing else**:
 
 This plugin ships a generic starter framework skeleton (modeled on a real
 Playwright/POM/TS project, generalized) under this plugin's own
-`templates/scaffold/` directory, in four layers — three
-independently-selectable, plus `rag`, which is **mandatory** and always
-scaffolded when it isn't already present (it's never offered as a
-checkbox; the only question it raises is when its registry token gets
-entered):
+`templates/scaffold/` directory, in three independently-selectable layers.
+Knowledge lookup (`knowledge-retriever` / `/qa-agents:implement-requirement`)
+is backed by UBT's Cortex KG, reached via MCP tools already available in
+this Claude Code session — nothing to scaffold into the target repo for it
+(no npm package, no local index, no registry token). Step 1.6 below handles
+mapping this project to its Cortex registry entry instead.
 
 | Layer | Adds |
 |---|---|
 | `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs) + `.claude/settings.local.json` (pre-enables it, see Step 0b), `.gitignore`, `.env.example` (secrets template — copy to `.env.local`), `.env.uat` (a real, committed placeholder — only `BASE_URL` needs a working value to run anything), `README.md` (generic human-facing setup/run doc, TODO-marked) + `CLAUDE.md` (generic project-instructions starter), `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts`, `src/cases/` (empty, `.gitkeep` only — the default `casesDir`) |
 | `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
 | `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
-| `rag` | **Mandatory — always scaffolded, never a choice.** Installs `@phoenix-dx/rag-cli` as an **optional** npm dependency (optional in npm's sense only: a missing registry token then can't break anyone's `npm install`) — org policy is to never vendor RAG source into a target repo, and there's exactly one private RAG package, so this plugin doesn't ask about either. Adds `.npmrc.example` (template — the real `.npmrc` holding the token is gitignored, per-project, never committed), `guide/rag-guide.md`, `docs/` docs-drop folder + `.gitignore` entries, `package.json` `rag:index`/`rag:query` scripts, and a "RAG setup" section inserted into `README.md` if one exists. Asks exactly one thing: paste the registry token now, or skip and add it later — see Step 3c |
 
 1. **Detect what's already there** before asking anything: check for
    `playwright.config.ts`, `tsconfig.json`, `.mcp.json`, a POM directory (per
-   Step 1's Glob), `allure-playwright` in `package.json`, an `src/api/` or
-   `k6/` directory, and `src/rag/` or a `rag:query` script in `package.json`
-   (a pre-existing `src/rag/` means a project scaffolded before this plugin
-   went private-only — leave it as-is, don't force-migrate it; just treat
-   the layer as already present). Build a per-layer present/missing
-   picture — don't guess, check the actual filesystem.
-2. **Always surface this to the human**, whether the project is empty or
-   already has a framework — unless literally everything in all four layers
-   is already present, in which case skip straight to step 3b and just state
-   that instead of asking a vacuous question. Otherwise ask, via
-   `AskUserQuestion` (single-select), how they want to proceed. (Every
-   literal question/option string shown anywhere in this file, including
-   3c below, is asked in **English, always** — regardless of what language
-   the human is chatting in. Don't localize these; this org standardized on
-   English tooling output on purpose.):
-   - **Default** — scaffold every layer that has anything missing, using
-     this plugin's generic templates as-is (no per-layer picking). Best for
-     an empty or near-empty project that just wants the whole starter
-     framework.
-   - **Custom** — pick exactly which layer(s) to scaffold now. `rag` is
-     not among the choices — it's mandatory and gets scaffolded either
-     way; say so in the question's framing rather than listing it as an
-     unselectable option.
-3. **Resolve which layers to scaffold**, based on the answer to step 2:
-   - **3a. If Default** — treat every layer step 1 found not-fully-present
-     as selected. Still show what's already present per layer (so the human
-     knows it won't be touched) before proceeding — this is a statement, not
-     a second question.
-   - **3b. If Custom** — ask a second `AskUserQuestion` (multiSelect) over
-     `core`/`allure`/`api-k6` only, showing what's already present vs.
-     missing per layer, and let them pick zero or more of those to
-     scaffold now. `rag` is added to the selection regardless of this
-     answer — don't offer it, don't let it be deselected.
-   - **3c. `rag` is always in the selection** (Default or Custom), unless
-     Step 1's detection found it already fully present. Nothing about the
-     layer itself is a question: this plugin only scaffolds the private
-     variant, full stop; `{{RAG_PACKAGE_NAME}}` is always
-     `@phoenix-dx/rag-cli` and `{{RAG_PACKAGE_SCOPE}}` is always
-     `@phoenix-dx` (this org has exactly one private RAG package); and it
-     is never deferred to a later run. `{{RAG_PACKAGE_NAME}}` goes into
-     `optionalDependencies` (see the layer's `ADDITIONS.md` Step 3), so
-     scaffolding it unconditionally can't break anyone's `npm install`,
-     token or no token.
-
-     Exactly one real question remains — the registry token. Ask it via
-     `AskUserQuestion` (single-select), in English:
-     ```
-     question: "The rag layer installs @phoenix-dx/rag-cli from GitHub Packages, a private registry. How do you want to handle the token?"
-     header: "RAG token"
-     options:
-       - label: "Paste token now (Recommended)"
-         description: "I'll write it into this project's gitignored .npmrc, so npm install resolves the RAG CLI right away."
-       - label: "Skip — add it later"
-         description: "No .npmrc written now. The rag layer is scaffolded either way and npm install still succeeds — only rag:index/rag:query stay unavailable until you add a token."
-     ```
-     - **If "Paste token now"** — ask one normal follow-up chat question
-       (free text, not `AskUserQuestion` — a token is a secret, not a
-       small option set), in English: "Paste your GitHub Packages PAT
-       (`read:packages` scope) and I'll write it straight into `.npmrc`."
-       - **If they paste a token** — write it directly to the real,
-         gitignored `.npmrc` at the project root (not `.npmrc.example`):
-         ```
-         {{RAG_PACKAGE_SCOPE}}:registry=https://npm.pkg.github.com
-         //npm.pkg.github.com/:_authToken=<the token they gave>
-         ```
-         Create the file fresh if it doesn't exist yet (don't copy
-         `.npmrc.example` first and edit it — that file keeps the
-         `<YOUR_TOKEN>` placeholder for reference, this is a separate
-         real file). `.npmrc.example` is copied either way and stays in
-         the repo as the committed template — never delete it just
-         because a real `.npmrc` now exists. Never echo the token value
-         back in any response — after writing, confirm only that
-         `.npmrc` was created, not what it contains.
-       - **If it turns out they don't have one to hand** — treat it
-         exactly as "Skip" below; don't push, and don't ask again.
-     - **If "Skip — add it later"** — don't create the real `.npmrc` at
-       all, but **do** make sure `.npmrc.example` exists at the project
-       root (it's copied by Step 4 with `{{RAG_PACKAGE_SCOPE}}`
-       substituted — verify it landed, and write it from the layer
-       template if it somehow didn't). That template file is the whole
-       point of this branch: it's what the human copies to `.npmrc` when
-       they do get a token, and it's committed, so teammates find it
-       after a clone.
-
-       This is a normal, fully-supported outcome, not a pending failure:
-       `npm install` works as-is and the whole framework runs; only
-       `npm run rag:index` / `npm run rag:query` (and therefore
-       `knowledge-retriever`) stay unavailable until a token exists.
-       Note in the Step 5 report how to add one later — preferably two
-       lines in `~/.npmrc` (once per machine, survives every clone), or
-       per-clone by copying `.npmrc.example` to `.npmrc` — followed by
-       re-running `npm install`, since the token-less install skipped the
-       package. See the layer's `ADDITIONS.md` Step 6.
-
-     If a human explicitly names a *different* package in their own
-     message (unprompted — this org occasionally has a one-off reason
-     to), honor that instead of the default; just don't ask for it.
-
-     Skip this whole 3c flow if the project already has the `rag` layer
-     present (per Step 1) — don't re-ask.
-4. **For each selected layer**, copy every file from this plugin's
+   Step 1's Glob), `allure-playwright` in `package.json`, and an `src/api/` or
+   `k6/` directory. Build a per-layer present/missing picture — don't guess,
+   check the actual filesystem.
+2. **No question here — always scaffold every layer that has anything
+   missing**, using this plugin's generic templates as-is, whether the
+   project is empty or already has a framework. Don't ask `AskUserQuestion`
+   about which layers to scaffold and don't offer a Custom/pick-layers path
+   — the human can always ask afterward to remove or redo a specific layer
+   if they don't want it. Treat every layer Step 1 found not-fully-present
+   as selected. If literally everything in all three layers is already
+   present, just state that (a statement, not a question) and move on.
+3. **For each selected layer**, copy every file from this plugin's
    `templates/scaffold/<layer>/` into the equivalent path in the target
    project — including dotfiles like `.mcp.json` (don't let a hidden-file
    listing skip them) — then apply that layer's `ADDITIONS.md`
@@ -200,14 +111,14 @@ entered):
    - **Never overwrite a file that already exists at the target path.** If a
      template file would collide with something already there, skip writing
      it and note the skip in the Step 5 report instead — this is existing
-     work, not yours to clobber. This applies identically in Default mode —
-     "default" means "fill in what's missing," never "clobber what's there."
+     work, not yours to clobber. Scaffolding everything missing means "fill
+     in what's missing," never "clobber what's there."
    - When merging into an existing `package.json` / `.gitignore` /
      `playwright.config.ts` / `eslint.config.mjs`, merge additively,
      and if a script/dep/section already exists with a *different* value
      than the template expects, keep the project's existing value and flag
      the conflict in Step 5 rather than overwriting it.
-5. **`core/src/pages/example/login.page.ts` and `src/global.setup.ts` are
+4. **`core/src/pages/example/login.page.ts` and `src/global.setup.ts` are
    starters, not real POMs** — they're deliberately full of `TODO` /
    placeholder locators (never invented real ones — same discipline as
    everywhere else in this plugin). Tell the human explicitly that these need
@@ -216,7 +127,7 @@ entered):
    login: specs inherit the session from `storageState` and never
    authenticate themselves (`rules.enforceLoginPattern`, framework-rules.md
    §4). Deleting them applies only to an app with no authenticated area.
-6. Whatever layers were scaffolded (or none, if skipped), continue into
+5. Whatever layers were scaffolded (or none, if skipped), continue into
    Step 0b and then Step 1 — the scan there will pick up whatever structure
    just got written (or the project's pre-existing one) as "existing
    conventions." Dependencies are installed at the very end, in Step 4b,
@@ -266,12 +177,11 @@ never grounds for turning it into a question:
    - What do they import, and from where (a custom fixture, or the test runner directly)?
 4. Look for a test-case source directory (markdown/other format describing scenarios before they become specs) — often near the spec directory or under a `cases`/`test-cases` folder. If none exists yet (fresh project, or `core` layer just scaffolded `src/cases/`), `src/cases/` is the default `casesDir` — don't ask about this one, just use it, same as `src/pages`/`src/tests` aren't asked about either.
 5. Look for a lint command in `package.json` scripts (e.g. `lint`, `lint:file`).
-6. Check RAG setup — the `knowledge-retriever` agent expects a per-project `npm run rag:query` script backed by `@phoenix-dx/rag-cli` (see Step 0's mandatory `rag` layer), not a global tool install:
-   - `Grep` for a `rag:query` script in `package.json` (a pre-existing `src/rag/index.ts` also counts — that's a project scaffolded before this plugin). If neither is there, Step 0's `rag` layer should have just added it — re-check rather than telling the human to install anything externally.
-   - Don't read `node_modules/` here to decide anything: dependencies aren't installed until Step 4b, so "not in `node_modules`" at this point means nothing. Whether `@phoenix-dx/rag-cli` actually resolved is a Step 4b outcome, reported there.
-   - If it IS present, `Glob` for `.rag/store.sqlite` in the project root to see if anything's been indexed yet, and if so, try to determine which collection name(s) it holds (ask the human if you can't tell from a quick `npm run rag:query --` test).
-   - Only note a custom `ragQueryCommand` override if the project demonstrably uses something other than its own `npm run rag:query` script (rare) — don't invent one.
-7. Check for a project instructions file (`CLAUDE.md` or similar) that already documents test-case format rules — if found, don't duplicate its content into the config; just note its path so `test-case-writer` reads it directly.
+6. Check the Cortex KG mapping — `knowledge-retriever` and `/qa-agents:implement-requirement` query UBT's Cortex knowledge graph by canonical project key, not a per-project install:
+   - Call `mcp__claude_ai_Cortex__list_registered_projects` (or `resolve_project` if a clear candidate name is already known) and try to match this target project against a `canonical_key`/`display_name`/`aliases` entry, using the target project's `package.json` `name`, its directory name, and any Jira/repo naming mentioned in existing docs.
+   - If the tool call itself fails or returns an entitlements/access error, don't treat that as "no match" — note that Cortex access may be blocked for the current identity, and say so plainly in Step 5's report; still let the human set `cortexProject` manually in Step 2 if they know the right key, since the config field doesn't require a successful lookup to be set.
+   - If nothing matches with reasonable confidence, don't guess — leave it as "no confident match" for Step 2 to ask about, rather than picking the closest-sounding project.
+7. Check for a project instructions file (`CLAUDE.md` or similar) that already documents test-case format rules — if found, don't duplicate its content into the config; just note its path so `case-writer` reads it directly.
 
 ## Step 2 — Confirm paths with the human; convention rules are org defaults, not questions
 
@@ -287,7 +197,7 @@ interrogate field by field when you already have solid evidence:
 - Test-case source directory — state the default (`src/cases/`, existing or just scaffolded) or whatever Step 1 found instead; only ask if genuinely ambiguous (e.g. TCs demonstrably live somewhere else already, or aren't tracked as files at all)
 - Fixture import path, if specs use one (e.g. for an API client)
 - Lint command (or "none")
-- RAG: whether the `rag:query` script is wired up, and if anything is already indexed, which collection this project's docs live in (or "not indexed yet"). Whether `@phoenix-dx/rag-cli` itself resolves is unknown until Step 4b installs — don't state it here.
+- Cortex KG mapping: show Step 1.6's best-guess `canonical_key` (or "no confident match") and let the human confirm or correct it, or say "skip — don't use Cortex for this project" if they'd rather `knowledge-retriever` stay unavailable. Note plainly that even a correct mapping doesn't guarantee access — that depends on entitlements a KB steward grants separately, outside this command's control.
 
 **B. Framework conventions — org standards. Apply them, state them, never
 ask.** These are not per-project preferences; this org has already decided
@@ -336,8 +246,7 @@ Write `.claude/qa-agents.config.json` in the target project:
   "casesDir": "<path — defaults to src/cases/ for a fresh scaffold, else wherever Step 1 found existing TCs, or null if TCs aren't tracked as files at all>",
   "fixtureImport": "<import path, or null>",
   "lintCommand": "<command, or null>",
-  "ragCollection": "<collection name this project's vendored rag-cli holds its docs under, or null if not indexed yet>",
-  "ragQueryCommand": "<ONLY set if this project uses something other than its own vendored `npm run rag:query --` script — an override command, else null (null does NOT mean 'no RAG'; it means 'use this project's own npm run rag:query -- script')>",
+  "cortexProject": "<the Cortex canonical project key confirmed in Step 2, or null if this project isn't registered in Cortex or the human opted out>",
   "testHeaderFormat": "<the org default from Step 2B, unless this project demonstrably has its own convention>",
   "caseFormatDoc": "<path to the project's own TC-format rules doc, if one exists, else null>",
   "rules": {
@@ -397,16 +306,10 @@ the Step 5 report.
    flags, don't edit `package.json` to make it resolve, don't delete
    `node_modules`/the lockfile. Capture the error and go straight to Step 5
    — everything before this point (config + docs) already succeeded and
-   still stands. A missing RAG registry token is *not* a failure mode here:
-   `@phoenix-dx/rag-cli` is an optional dependency, so it's skipped
-   silently (see Step 3c).
+   still stands.
 5. Never run anything beyond the install itself — no browser download
    (`npx playwright install` / the project's `install:browsers` script), no
    build, no test run.
-6. This is also where the RAG install state becomes knowable: after the
-   install, check whether `@phoenix-dx/rag-cli` landed in `node_modules`.
-   Not there + no token configured = the expected "scaffolded, token
-   pending" state — report it as such in Step 5, not as an error.
 
 ## Step 5 — Report
 
@@ -417,8 +320,7 @@ Tell the human:
 - That `src/pages/example/login.page.ts` / `src/global.setup.ts` (if scaffolded) are TODO-marked starters needing a real `dom-inspector` + `pom-author` pass — and that this is where the project's only login lives: specs inherit the session via `storageState` and never log in themselves (`rules.enforceLoginPattern`). Deleting them is for the rare app with no authenticated area at all.
 - That `.env.uat` (if scaffolded) has a placeholder `BASE_URL=https://example.com` — replace it with the app's real UAT URL before running any spec.
 - That `CLAUDE.md` and `README.md` (if scaffolded) are generic starters with `TODO(init)` markers — point out they should be revisited once conventions are confirmed, and note either was skipped if the project already had one.
-- **If the `rag` layer was scaffolded**: say plainly that `npm install` is not blocked either way — `@phoenix-dx/rag-cli` is an optional dependency, so npm skips it when there's no registry token and installs everything else normally. Then say which of the two token states this project is in: either a real `.npmrc` was written from a token they pasted during Step 3c (RAG works after `npm install`), or no token yet (everything works except `npm run rag:index` / `rag:query` and `knowledge-retriever`, until they add a token — `.npmrc.example` is already sitting at the project root as the template for exactly this, so say it's there: either lift its two lines into `~/.npmrc` once per machine, or copy it to `.npmrc` per clone — and re-run `npm install`, since the token-less install skipped the package). A token can't go in `.env.local` either way; see the `rag` layer's `ADDITIONS.md` Step 6 and the "RAG setup" section just inserted into `README.md` if one exists. Always say which of the two states it's in, every time the layer is scaffolded.
-- **Never report `rag` as skipped or optional-to-add-later** — the layer is mandatory and always scaffolded (only its token is deferrable). The one exception is Step 1 finding it already fully present, in which case just say it was left untouched.
+- **Cortex KG mapping**: report the `cortexProject` value written to the config (or that it's `null` and why — no confident match, human opted out, or the lookup call itself failed/was denied). If set, remind the human that a correct mapping still doesn't guarantee `knowledge-retriever` gets results — Cortex access is entitlement-gated per identity, granted by a KB steward, independent of anything this command does.
 - Whether dependencies were installed in Step 4b: which command ran (`npm`/`pnpm`/`yarn`/`bun`), and whether it succeeded, was skipped (no `package.json`), or failed — quoting the error verbatim if it failed. If `@playwright/test` is now installed but its browsers aren't, add one line telling them to run the project's own browser-install script if it has one (the `core` scaffold ships `npm run install:browsers`), else `npx playwright install`, before any spec will run.
 - The config file path written.
 - The Step 2B convention defaults that were applied without asking — list them compactly (`readonlyLocators`, `mandatoryTestStep`, `noPageDotInSpec`, `enforceLoginPattern`, `builderFieldThreshold: 3`, and the TC-ID + tags `testHeaderFormat`) and say in one line that they're org standards, so the human can flag an exception now instead of discovering it later. Call out separately any default you overrode from existing-code evidence, and what the project does instead.
