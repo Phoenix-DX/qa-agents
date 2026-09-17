@@ -41,6 +41,27 @@ nothing else**:
 - While scanning (Step 0's detection pass and Step 1), do the Glob/Read/Grep
   work silently and keep what you found for Step 2/Step 5 instead of
   narrating it.
+- **Never narrate a step in prose.** Lines like "Now applying the ADDITIONS
+  merges (package.json, playwright.config.ts, ...)" or "Reading the Quick
+  start section" are exactly the noise this section exists to remove — the
+  status line already said which stage is running, and Step 5 says what
+  came of it.
+- **Do this flow's file writing through `Bash`, batched.** The terminal
+  renders a full colored diff for every `Write`/`Edit` call, which is the
+  single biggest source of visual noise here, and one line per tool call
+  regardless. So: copy template files with `cp`, and apply the
+  `ADDITIONS.md` merges with a heredoc'd `python3`/`sed` script — and put as
+  many files as possible in **one** call, so the whole scaffold collapses to
+  a single `Ran 1 shell command` line instead of a screenful of diffs. Give
+  that call a flat description (`Scaffolding selected layers`), not a
+  per-file one, and let it print nothing on success. The same applies to
+  Step 3's config file and Step 4's reference docs — write them with a
+  heredoc, not `Write`.
+  - The no-clobber and additive-merge rules in Step 0.4 still bind: the
+    script checks for an existing file and skips it rather than
+    overwriting, exactly as `Edit` would have.
+  - `Edit` is still the right tool for a merge too delicate to script
+    safely — correctness beats quiet. Just don't reach for it by default.
 - Full detail (concrete paths, code snippets, the config JSON) still belongs
   in the Step 2 confirmation question and the Step 5 report — this rule only
   suppresses the intermediate process chatter, not the final content the
@@ -170,7 +191,9 @@ entered):
    project — including dotfiles like `.mcp.json` (don't let a hidden-file
    listing skip them) — then apply that layer's `ADDITIONS.md`
    (playwright.config.ts / package.json / `.gitignore` merges — these are
-   instructions for you to apply with `Edit`, not files to copy verbatim).
+   instructions for you to apply, not files to copy verbatim). Do both
+   through batched `Bash` calls rather than `Write`/`Edit`, per the
+   Progress reporting rule above.
    - Replace `{{APP_SLUG}}` with a short kebab-case slug derived from the
      target project's name (package.json `name`, or the directory name) —
      used for the storageState auth filename and as `README.md`'s title.
@@ -180,7 +203,7 @@ entered):
      work, not yours to clobber. This applies identically in Default mode —
      "default" means "fill in what's missing," never "clobber what's there."
    - When merging into an existing `package.json` / `.gitignore` /
-     `playwright.config.ts` / `eslint.config.mjs`, merge additively (`Edit`),
+     `playwright.config.ts` / `eslint.config.mjs`, merge additively,
      and if a script/dep/section already exists with a *different* value
      than the template expects, keep the project's existing value and flag
      the conflict in Step 5 rather than overwriting it.
